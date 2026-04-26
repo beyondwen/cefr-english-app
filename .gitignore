@@ -1,0 +1,10 @@
+node_modules/
+worker/.wrangler/
+worker/.dev.vars
+worker/.mf/
+android/.gradle/
+android/.idea/
+android/app/build/
+*.db
+*.sqlite
+local.properties

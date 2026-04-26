@@ -1,0 +1,12 @@
+{
+  "name": "cefr-english-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-26",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cefr-english-db",
+      "database_id": "local-dev"
+    }
+  ]
+}
