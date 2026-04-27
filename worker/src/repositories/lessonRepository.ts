@@ -33,6 +33,13 @@ export const createLessonRepository = (db: D1Database) => ({
       .first<{ lesson_json: string }>()
     return row ? (JSON.parse(row.lesson_json) as LessonInstance) : null
   },
+  async findByInstanceId(lessonInstanceId: string): Promise<LessonInstance | null> {
+    const row = await db
+      .prepare('SELECT lesson_json, status, template_id, generation_version, level FROM lesson_instances WHERE lesson_instance_id = ?')
+      .bind(lessonInstanceId)
+      .first<{ lesson_json: string }>()
+    return row ? (JSON.parse(row.lesson_json) as LessonInstance) : null
+  },
   async insertActiveInstance(lesson: LessonInstance): Promise<void> {
     await db
       .prepare(
@@ -49,6 +56,12 @@ export const createLessonRepository = (db: D1Database) => ({
         lesson.generatedAt,
         lesson.completedAt ?? null,
       )
+      .run()
+  },
+  async markCompleted(lessonInstanceId: string, completedAt: string): Promise<void> {
+    await db
+      .prepare('UPDATE lesson_instances SET status = ?, completed_at = ? WHERE lesson_instance_id = ?')
+      .bind('completed', completedAt, lessonInstanceId)
       .run()
   },
 })

@@ -70,6 +70,16 @@ export const createFakeEnv = () => {
                   user_id: params[1],
                 })
               }
+              if (sql.startsWith('UPDATE lesson_instances SET status =')) {
+                const existing = state.lesson_instances.get(String(params[2]))
+                if (existing) {
+                  existing.status = String(params[0])
+                  const lesson = JSON.parse(existing.lesson_json) as { status: string; completedAt: string | null }
+                  lesson.status = String(params[0])
+                  lesson.completedAt = params[1] == null ? null : String(params[1])
+                  existing.lesson_json = JSON.stringify(lesson)
+                }
+              }
               if (sql.startsWith('INSERT INTO writing_reviews')) {
                 state.writing_reviews.push({ user_id: params[0], lesson_id: params[1] })
               }
@@ -100,7 +110,19 @@ export const createFakeEnv = () => {
                 const row = state.lessons.get(`${params[0]}:${params[1]}`)
                 return row ? ({ lesson_json: row.lesson_json } as T) : null
               }
-              if (sql.startsWith('SELECT lesson_json, status, template_id, generation_version, level FROM lesson_instances')) {
+              if (sql.startsWith('SELECT lesson_json, status, template_id, generation_version, level FROM lesson_instances WHERE lesson_instance_id = ?')) {
+                const row = state.lesson_instances.get(String(params[0]))
+                return row
+                  ? ({
+                      lesson_json: row.lesson_json,
+                      status: row.status,
+                      template_id: row.template_id,
+                      generation_version: row.generation_version,
+                      level: row.level,
+                    } as T)
+                  : null
+              }
+              if (sql.startsWith("SELECT lesson_json, status, template_id, generation_version, level FROM lesson_instances WHERE user_id = ? AND status != 'completed'")) {
                 const userId = String(params[0])
                 for (const row of state.lesson_instances.values()) {
                   const lesson = JSON.parse(row.lesson_json) as { userId: string }

@@ -3,7 +3,7 @@ import { createApp } from '../src/app'
 import { createFakeEnv } from './helpers/fakeDb'
 
 describe('worker e2e flow', () => {
-  it('supports placement -> lesson -> writing -> complete', async () => {
+  it('supports placement -> today lesson -> submit -> summary', async () => {
     const app = createApp(createFakeEnv())
 
     const placement = await app.fetch(
@@ -20,36 +20,33 @@ describe('worker e2e flow', () => {
       }),
     )
 
-    const lesson = await app.fetch(
-      new Request('http://localhost/api/lessons/next', {
-        method: 'POST',
-        body: JSON.stringify({ userId: 'u1', level: 'A2' }),
-      }),
-    )
+    const lesson = await app.fetch(new Request('http://localhost/api/today-lesson?userId=u1'))
+    const lessonJson = (await lesson.json()) as {
+      lessonInstanceId: string
+      level: 'A2'
+      writingPrompt: string
+    }
 
-    const writing = await app.fetch(
-      new Request('http://localhost/api/writing/review', {
+    const submit = await app.fetch(
+      new Request('http://localhost/api/lesson/submit', {
         method: 'POST',
         body: JSON.stringify({
           userId: 'u1',
-          lessonId: 'A2-01',
-          level: 'A2',
-          prompt: 'Write about a past experience.',
-          submission: 'Last year I visited my aunt and we cooked dinner together.',
+          lessonInstanceId: lessonJson.lessonInstanceId,
+          level: lessonJson.level,
+          prompt: lessonJson.writingPrompt,
+          readingAnswers: ['a', 'b', 'c', 'd'],
+          grammarAnswers: ['a', 'b', 'c', 'd'],
+          writingSubmission: 'Last year I visited my aunt. We cooked dinner together.',
         }),
       }),
     )
 
-    const progress = await app.fetch(
-      new Request('http://localhost/api/progress/complete', {
-        method: 'POST',
-        body: JSON.stringify({ userId: 'u1', level: 'A2', lessonId: 'A2-01' }),
-      }),
-    )
+    const summary = await app.fetch(new Request('http://localhost/api/me/summary?userId=u1'))
 
     expect(placement.status).toBe(200)
     expect(lesson.status).toBe(200)
-    expect(writing.status).toBe(200)
-    expect(progress.status).toBe(200)
+    expect(submit.status).toBe(200)
+    expect(summary.status).toBe(200)
   })
 })

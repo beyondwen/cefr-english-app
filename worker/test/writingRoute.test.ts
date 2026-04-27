@@ -20,7 +20,10 @@ describe('POST /api/writing/review', () => {
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toMatchObject({
-      ruleChecks: { wordCountOk: true },
+      ruleChecks: {
+        notBlank: true,
+        minSentencesOk: false,
+      },
     })
   })
 })

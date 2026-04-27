@@ -88,3 +88,18 @@ export type UserProfile = {
   themeRotationState: 'life' | 'expression'
   currentTemplateId: string | null
 }
+
+export type WritingRuleChecks = {
+  notBlank: boolean
+  minSentencesOk: boolean
+  onTopicLikely: boolean
+}
+
+export type LessonSubmitResult = {
+  completed: boolean
+  currentLessonId: string
+  nextLessonId: string | null
+  todayCompleted: boolean
+  missingRequirements: string[]
+  ruleChecks: WritingRuleChecks
+}

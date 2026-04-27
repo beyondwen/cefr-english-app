@@ -11,7 +11,10 @@ describe('GET /api/me/summary', () => {
     await expect(response.json()).resolves.toEqual({
       currentLevel: 'A1',
       completedCount: 0,
+      currentLessonId: null,
       nextLessonId: null,
+      todayCompleted: false,
+      recentWeaknesses: [],
     })
   })
 })

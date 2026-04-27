@@ -22,7 +22,7 @@ describe('reviewWriting', () => {
       aiProvider: fakeProvider,
     })
 
-    expect(result.ruleChecks.wordCountOk).toBe(true)
+    expect(result.ruleChecks.minSentencesOk).toBe(false)
     expect(result.feedback.grammar).toContain('present simple')
   })
 })
