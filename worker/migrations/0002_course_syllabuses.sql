@@ -1,79 +1,4 @@
-CREATE TABLE users (
-  user_id TEXT PRIMARY KEY,
-  current_level TEXT NOT NULL,
-  recent_weaknesses_json TEXT NOT NULL DEFAULT '[]',
-  theme_rotation_state TEXT NOT NULL DEFAULT 'life',
-  current_template_id TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-
-CREATE TABLE placement_results (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id TEXT NOT NULL,
-  level TEXT NOT NULL,
-  weaknesses_json TEXT NOT NULL,
-  raw_score_json TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
-
-CREATE TABLE lessons (
-  lesson_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
-  level TEXT NOT NULL,
-  unit_index INTEGER NOT NULL,
-  status TEXT NOT NULL,
-  lesson_json TEXT NOT NULL,
-  generated_by TEXT NOT NULL,
-  generated_at TEXT NOT NULL,
-  version TEXT NOT NULL,
-  PRIMARY KEY (lesson_id, user_id)
-);
-
-CREATE TABLE lesson_instances (
-  lesson_instance_id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  template_id TEXT NOT NULL,
-  level TEXT NOT NULL,
-  generation_version INTEGER NOT NULL,
-  status TEXT NOT NULL,
-  lesson_json TEXT NOT NULL,
-  generated_at TEXT NOT NULL,
-  completed_at TEXT
-);
-
-CREATE TABLE lesson_submissions (
-  submission_id INTEGER PRIMARY KEY AUTOINCREMENT,
-  lesson_instance_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
-  reading_answers_json TEXT NOT NULL,
-  grammar_answers_json TEXT NOT NULL,
-  writing_submission TEXT NOT NULL,
-  review_json TEXT NOT NULL,
-  submitted_at TEXT NOT NULL
-);
-
-CREATE TABLE writing_reviews (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id TEXT NOT NULL,
-  lesson_id TEXT NOT NULL,
-  prompt TEXT NOT NULL,
-  submission TEXT NOT NULL,
-  review_json TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
-
-CREATE TABLE progress (
-  user_id TEXT PRIMARY KEY,
-  level TEXT NOT NULL,
-  completed_lesson_ids_json TEXT NOT NULL,
-  current_template_id TEXT,
-  current_lesson_instance_id TEXT,
-  today_completed INTEGER NOT NULL DEFAULT 0,
-  updated_at TEXT NOT NULL
-);
-
-CREATE TABLE course_syllabuses (
+CREATE TABLE IF NOT EXISTS course_syllabuses (
   level TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -81,7 +6,7 @@ CREATE TABLE course_syllabuses (
   updated_at TEXT NOT NULL
 );
 
-INSERT INTO course_syllabuses (level, title, description, modules_json, updated_at) VALUES
+INSERT OR REPLACE INTO course_syllabuses (level, title, description, modules_json, updated_at) VALUES
 ('A1', 'A1 入门基础', '建立简单日常场景中的基础英语表达能力。', '[{"title":"自我介绍","goal":"说明自己是谁，并提出简单问题。","lessons":["be 动词与主语代词","姓名、国家、职业","写一段简短自我介绍"]},{"title":"日常生活","goal":"谈论日常安排和熟悉物品。","lessons":["一般现在时肯定句与否定句","时间、星期和基础频率副词","描述普通的一天"]},{"title":"地点与需求","goal":"完成简单的旅行、购物和问路交流。","lessons":["There is / There are 句型","价格、地点和方向表达","写一段简短请求"]}]', '2026-04-27T00:00:00.000Z'),
 ('A2', 'A2 初级交流', '扩展日常表达，能够谈论过去经历和未来计划。', '[{"title":"过去经历","goal":"描述简单的过去事件。","lessons":["一般过去时规则与不规则动词","旅行和周末活动词汇","写一段简短旅行记录"]},{"title":"计划与偏好","goal":"谈论打算、喜好和比较。","lessons":["going to 与 would like","比较级和最高级","选择并解释自己的偏好"]},{"title":"社交场景","goal":"处理邀请、建议和简单问题。","lessons":["can、should、have to","健康、食物和预约表达","写一条礼貌消息"]}]', '2026-04-27T00:00:00.000Z'),
 ('B1', 'B1 独立表达核心', '围绕工作、学习和旅行话题进行清晰沟通。', '[{"title":"故事与观点","goal":"解释事件并给出原因。","lessons":["过去进行时与现在完成时","原因、转折连接词","写一段个人经历"]},{"title":"工作与学习","goal":"讨论目标、职责和进展。","lessons":["义务和建议类情态动词","职场常用词汇","写一封进度更新邮件"]},{"title":"解决问题","goal":"描述问题并提出可行方案。","lessons":["第一条件句","服务和投诉表达","写一段解决方案"]}]', '2026-04-27T00:00:00.000Z'),

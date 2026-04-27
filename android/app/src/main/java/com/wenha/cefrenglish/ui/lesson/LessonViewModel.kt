@@ -34,8 +34,10 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
 
     fun loadTodayLesson(userId: String) {
         viewModelScope.launch {
-            val lesson = repository.getTodayLesson(userId)
-            _uiState.value = lesson.toUiState()
+            runCatching { repository.getTodayLesson(userId) }
+                .onSuccess { lesson ->
+                    _uiState.value = lesson.toUiState()
+                }
         }
     }
 
@@ -61,8 +63,10 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
 
     fun regenerate(userId: String) {
         viewModelScope.launch {
-            val lesson = repository.regenerateTodayLesson(userId)
-            _uiState.value = lesson.toUiState()
+            runCatching { repository.regenerateTodayLesson(userId) }
+                .onSuccess { lesson ->
+                    _uiState.value = lesson.toUiState()
+                }
         }
     }
 
@@ -70,20 +74,23 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
         val lesson = _uiState.value
         if (lesson.lessonInstanceId.isBlank()) return
         viewModelScope.launch {
-            val result = repository.submitLesson(
-                userId = userId,
-                lessonInstanceId = lesson.lessonInstanceId,
-                prompt = lesson.writingPrompt,
-                level = lesson.level,
-                readingAnswers = lesson.readingAnswers,
-                grammarAnswers = lesson.grammarAnswers,
-                writingSubmission = lesson.writingSubmission,
-            )
-            _uiState.value = _uiState.value.copy(
-                feedback = result.feedback,
-                submissionResult = result,
-                completed = result.completed,
-            )
+            runCatching {
+                repository.submitLesson(
+                    userId = userId,
+                    lessonInstanceId = lesson.lessonInstanceId,
+                    prompt = lesson.writingPrompt,
+                    level = lesson.level,
+                    readingAnswers = lesson.readingAnswers,
+                    grammarAnswers = lesson.grammarAnswers,
+                    writingSubmission = lesson.writingSubmission,
+                )
+            }.onSuccess { result ->
+                _uiState.value = _uiState.value.copy(
+                    feedback = result.feedback,
+                    submissionResult = result,
+                    completed = result.completed,
+                )
+            }
         }
     }
 }

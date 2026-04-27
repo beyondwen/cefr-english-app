@@ -36,7 +36,7 @@ fun CefrEnglishApp() {
     NavHost(navController = navController, startDestination = startDestination) {
         composable(AppRoute.Home.route) {
             val viewModel = viewModel<HomeViewModel> {
-                HomeViewModel(container.progressRepository)
+                HomeViewModel(container.progressRepository, container.syllabusRepository)
             }
             LaunchedEffect(userId) {
                 viewModel.refresh(userId)

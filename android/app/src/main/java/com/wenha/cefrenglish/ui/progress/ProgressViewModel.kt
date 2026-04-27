@@ -22,15 +22,17 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
 
     fun refresh(userId: String) {
         viewModelScope.launch {
-            val result = repository.fetchSummary(userId)
-            _uiState.value = ProgressUiState(
-                completedCount = result.completedCount,
-                nextLessonId = result.nextLessonId.orEmpty(),
-                currentLevel = result.currentLevel,
-                currentLessonId = result.currentLessonId.orEmpty(),
-                todayCompleted = result.todayCompleted,
-                recentWeaknesses = result.recentWeaknesses,
-            )
+            runCatching { repository.fetchSummary(userId) }
+                .onSuccess { result ->
+                    _uiState.value = ProgressUiState(
+                        completedCount = result.completedCount,
+                        nextLessonId = result.nextLessonId.orEmpty(),
+                        currentLevel = result.currentLevel,
+                        currentLessonId = result.currentLessonId.orEmpty(),
+                        todayCompleted = result.todayCompleted,
+                        recentWeaknesses = result.recentWeaknesses,
+                    )
+                }
         }
     }
 }

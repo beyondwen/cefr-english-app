@@ -8,6 +8,7 @@ type TableState = {
   lesson_submissions: Row[]
   writing_reviews: Row[]
   progress: Map<string, { level: string; completed_lesson_ids_json: string; current_template_id: string | null; current_lesson_instance_id: string | null; today_completed: number }>
+  course_syllabuses: Map<string, { level: string; title: string; description: string; modules_json: string }>
 }
 
 export const createFakeEnv = () => {
@@ -19,6 +20,19 @@ export const createFakeEnv = () => {
     lesson_submissions: [],
     writing_reviews: [],
     progress: new Map(),
+    course_syllabuses: new Map([
+      [
+        'A1',
+        {
+          level: 'A1',
+          title: 'A1 入门基础',
+          description: '建立简单日常场景中的基础英语表达能力。',
+          modules_json: JSON.stringify([
+            { title: '自我介绍', goal: '说明自己是谁，并提出简单问题。', lessons: ['be 动词与主语代词'] },
+          ]),
+        },
+      ],
+    ]),
   }
 
   const DB = {
@@ -149,6 +163,10 @@ export const createFakeEnv = () => {
                       today_completed: row.today_completed,
                     } as T)
                   : null
+              }
+              if (sql.startsWith('SELECT level, title, description, modules_json FROM course_syllabuses')) {
+                const row = state.course_syllabuses.get(String(params[0]))
+                return row ? ({ ...row } as T) : null
               }
               return null
             },

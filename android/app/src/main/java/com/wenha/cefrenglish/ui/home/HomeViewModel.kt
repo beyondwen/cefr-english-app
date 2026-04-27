@@ -3,6 +3,8 @@ package com.wenha.cefrenglish.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wenha.cefrenglish.data.ProgressRepository
+import com.wenha.cefrenglish.data.SyllabusRepository
+import com.wenha.cefrenglish.domain.CourseSyllabus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -14,6 +16,7 @@ data class HomeUiState(
     val nextLessonId: String? = null,
     val todayCompleted: Boolean = false,
     val recentWeaknesses: List<String> = emptyList(),
+    val selectedSyllabus: CourseSyllabus? = null,
 ) {
     val shouldStartPlacement: Boolean
         get() = currentLessonId == null && completedCount == 0
@@ -21,6 +24,7 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val repository: ProgressRepository,
+    private val syllabusRepository: SyllabusRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
@@ -28,15 +32,27 @@ class HomeViewModel(
     fun refresh(userId: String) {
         if (userId.isBlank()) return
         viewModelScope.launch {
-            val summary = repository.fetchSummary(userId)
-            _uiState.value = HomeUiState(
-                currentLevel = summary.currentLevel,
-                currentLessonId = summary.currentLessonId,
-                completedCount = summary.completedCount,
-                nextLessonId = summary.nextLessonId,
-                todayCompleted = summary.todayCompleted,
-                recentWeaknesses = summary.recentWeaknesses,
-            )
+            runCatching { repository.fetchSummary(userId) }
+                .onSuccess { summary ->
+                    _uiState.value = HomeUiState(
+                        currentLevel = summary.currentLevel,
+                        currentLessonId = summary.currentLessonId,
+                        completedCount = summary.completedCount,
+                        nextLessonId = summary.nextLessonId,
+                        todayCompleted = summary.todayCompleted,
+                        recentWeaknesses = summary.recentWeaknesses,
+                        selectedSyllabus = _uiState.value.selectedSyllabus,
+                    )
+                }
+        }
+    }
+
+    fun loadSyllabus(level: String) {
+        viewModelScope.launch {
+            runCatching { syllabusRepository.fetchSyllabus(level) }
+                .onSuccess { syllabus ->
+                    _uiState.value = _uiState.value.copy(selectedSyllabus = syllabus)
+                }
         }
     }
 }

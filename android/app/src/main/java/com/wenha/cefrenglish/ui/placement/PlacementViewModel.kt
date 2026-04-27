@@ -15,8 +15,10 @@ class PlacementViewModel(private val repository: PlacementRepository) : ViewMode
 
     fun submitAssessment(readingCorrect: Int, grammarCorrect: Int, writingWordCount: Int) {
         viewModelScope.launch {
-            val result = repository.assess(readingCorrect, grammarCorrect, writingWordCount)
-            _uiState.value = PlacementUiState(level = result.level, weaknesses = result.weaknesses)
+            runCatching { repository.assess(readingCorrect, grammarCorrect, writingWordCount) }
+                .onSuccess { result ->
+                    _uiState.value = PlacementUiState(level = result.level, weaknesses = result.weaknesses)
+                }
         }
     }
 }

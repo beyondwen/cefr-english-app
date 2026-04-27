@@ -9,6 +9,9 @@ interface AppApi {
     @POST("api/placement/assess")
     suspend fun assessPlacement(@Body request: PlacementRequestDto): PlacementResultDto
 
+    @GET("api/syllabus")
+    suspend fun fetchSyllabus(@Query("level") level: String): CourseSyllabusDto
+
     @GET("api/today-lesson")
     suspend fun getTodayLesson(@Query("userId") userId: String): DailyLessonDto
 

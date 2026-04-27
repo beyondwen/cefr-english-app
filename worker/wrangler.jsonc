@@ -2,11 +2,18 @@
   "name": "cefr-english-worker",
   "main": "src/index.ts",
   "compatibility_date": "2026-04-26",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "cefr.freedomjw.dpdns.org",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "cefr-english-db",
-      "database_id": "local-dev"
+      "database_name": "cefr-english-app-db",
+      "database_id": "e05b46ea-7c83-469b-aa93-29a66d45b379"
     }
   ]
 }

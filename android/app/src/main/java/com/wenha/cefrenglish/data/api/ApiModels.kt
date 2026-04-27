@@ -10,6 +10,19 @@ data class PlacementRequestDto(
 
 data class PlacementResultDto(val level: String, val weaknesses: List<String>)
 
+data class SyllabusModuleDto(
+    val title: String,
+    val goal: String,
+    val lessons: List<String>,
+)
+
+data class CourseSyllabusDto(
+    val level: String,
+    val title: String,
+    val description: String,
+    val modules: List<SyllabusModuleDto>,
+)
+
 data class LessonQuestionDto(
     val questionId: String,
     val prompt: String,

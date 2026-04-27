@@ -9,6 +9,19 @@ data class LessonQuestion(
     val answer: String,
 )
 
+data class SyllabusModule(
+    val title: String,
+    val goal: String,
+    val lessons: List<String>,
+)
+
+data class CourseSyllabus(
+    val level: String,
+    val title: String,
+    val description: String,
+    val modules: List<SyllabusModule>,
+)
+
 data class DailyLesson(
     val lessonInstanceId: String,
     val templateId: String,

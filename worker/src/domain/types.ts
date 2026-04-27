@@ -1,4 +1,4 @@
-export type CefrLevel = 'A1' | 'A2' | 'B1'
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
 
 export type Weakness = 'reading' | 'grammar' | 'writing'
 
@@ -24,6 +24,19 @@ export type LessonBlueprint = {
   unitIndex: number
   grammarFocus: string
   writingTask: string
+}
+
+export type SyllabusModule = {
+  title: string
+  goal: string
+  lessons: string[]
+}
+
+export type CourseSyllabus = {
+  level: CefrLevel
+  title: string
+  description: string
+  modules: SyllabusModule[]
 }
 
 export type LessonPayload = {
