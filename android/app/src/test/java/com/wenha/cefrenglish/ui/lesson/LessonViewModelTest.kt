@@ -8,21 +8,42 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class LessonViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun loadLesson_setsWritingPrompt() = runTest {
+    fun submitLesson_requiresAtLeastTwoSentences() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         try {
             val repository = FakeLessonRepository()
             val viewModel = LessonViewModel(repository)
 
-            viewModel.loadLesson(userId = "u1", level = "A1")
+            viewModel.loadTodayLesson("u1")
+            viewModel.updateWriting("I like coffee.")
+            viewModel.submitLesson("u1")
 
-            assertEquals("A1-01", viewModel.uiState.value.lessonId)
-            assertEquals("Write about your weekly routine.", viewModel.uiState.value.writingPrompt)
+            assertEquals(false, viewModel.uiState.value.completed)
+            assertEquals(listOf("writing_min_sentences"), viewModel.uiState.value.submissionResult?.missingRequirements)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun regenerateLesson_replacesLessonVersion() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeLessonRepository()
+            val viewModel = LessonViewModel(repository)
+
+            viewModel.loadTodayLesson("u1")
+            val firstId = viewModel.uiState.value.lessonInstanceId
+            viewModel.regenerate("u1")
+
+            assertNotEquals(firstId, viewModel.uiState.value.lessonInstanceId)
         } finally {
             Dispatchers.resetMain()
         }

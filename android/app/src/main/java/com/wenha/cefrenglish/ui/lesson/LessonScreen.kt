@@ -7,10 +7,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -19,62 +17,80 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun LessonScreen(
     viewModel: LessonViewModel,
     userId: String,
-    level: String,
     onContinue: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var submission by remember { mutableStateOf("") }
+
+    LaunchedEffect(userId) {
+        viewModel.loadTodayLesson(userId)
+    }
+    LaunchedEffect(state.completed) {
+        if (state.completed) onContinue()
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Lesson ${state.lessonId.ifBlank { "loading" }}")
-        Text(state.readingText)
-        Text(state.grammarExplanation)
-        Text(state.writingPrompt)
+        Text("Lesson ${state.templateId.ifBlank { "loading" }}")
+        Text(state.readingText, modifier = Modifier.padding(top = 8.dp))
+        state.readingQuestions.forEachIndexed { index, question ->
+            OutlinedTextField(
+                value = state.readingAnswers.getOrElse(index) { "" },
+                onValueChange = { viewModel.updateReadingAnswer(index, it) },
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth(),
+                label = { Text(question.prompt) },
+            )
+        }
+
+        Text(state.grammarExplanation, modifier = Modifier.padding(top = 12.dp))
+        state.grammarQuestions.forEachIndexed { index, question ->
+            OutlinedTextField(
+                value = state.grammarAnswers.getOrElse(index) { "" },
+                onValueChange = { viewModel.updateGrammarAnswer(index, it) },
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth(),
+                label = { Text(question.prompt) },
+            )
+        }
+
+        Text(state.writingPrompt, modifier = Modifier.padding(top = 12.dp))
         OutlinedTextField(
-            value = submission,
-            onValueChange = { submission = it },
+            value = state.writingSubmission,
+            onValueChange = { viewModel.updateWriting(it) },
             modifier = Modifier
-                .padding(top = 12.dp)
+                .padding(top = 8.dp)
                 .fillMaxWidth(),
             label = { Text("Your writing") },
         )
+        state.writingRubric.forEach {
+            Text(it, modifier = Modifier.padding(top = 4.dp))
+        }
+
         Button(
             modifier = Modifier
                 .padding(top = 12.dp)
                 .fillMaxWidth(),
-            onClick = { viewModel.loadLesson(userId, level) },
+            onClick = { viewModel.regenerate(userId) },
         ) {
-            Text("Load lesson")
+            Text("Regenerate lesson")
         }
+
         Button(
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxWidth(),
-            enabled = state.lessonId.isNotBlank(),
-            onClick = {
-                viewModel.submitWriting(
-                    userId = userId,
-                    level = level,
-                    submission = submission,
-                )
-            },
+            enabled = state.lessonInstanceId.isNotBlank(),
+            onClick = { viewModel.submitLesson(userId) },
         ) {
-            Text("Submit writing")
+            Text("Submit lesson")
+        }
+
+        state.submissionResult?.missingRequirements?.forEach {
+            Text("Missing: $it", modifier = Modifier.padding(top = 4.dp))
         }
         state.feedback?.let {
             Text("Grammar: ${it.grammar}", modifier = Modifier.padding(top = 12.dp))
-        }
-        Button(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .fillMaxWidth(),
-            enabled = state.lessonId.isNotBlank(),
-            onClick = {
-                viewModel.completeLesson(userId = userId, level = level)
-                onContinue()
-            },
-        ) {
-            Text("Complete lesson")
         }
     }
 }

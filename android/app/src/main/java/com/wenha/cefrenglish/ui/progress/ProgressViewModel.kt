@@ -11,6 +11,9 @@ data class ProgressUiState(
     val completedCount: Int = 0,
     val nextLessonId: String = "",
     val currentLevel: String = "",
+    val currentLessonId: String = "",
+    val todayCompleted: Boolean = false,
+    val recentWeaknesses: List<String> = emptyList(),
 )
 
 class ProgressViewModel(private val repository: ProgressRepository) : ViewModel() {
@@ -21,9 +24,12 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
         viewModelScope.launch {
             val result = repository.fetchSummary(userId)
             _uiState.value = ProgressUiState(
-                completedCount = result.completedLessons.size,
+                completedCount = result.completedCount,
                 nextLessonId = result.nextLessonId.orEmpty(),
                 currentLevel = result.currentLevel,
+                currentLessonId = result.currentLessonId.orEmpty(),
+                todayCompleted = result.todayCompleted,
+                recentWeaknesses = result.recentWeaknesses,
             )
         }
     }

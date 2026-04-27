@@ -5,7 +5,7 @@ import org.junit.Test
 
 class AppNavGraphTest {
     @Test
-    fun startDestination_isPlacement() {
-        assertEquals(AppRoute.Placement.route, startDestination)
+    fun startDestination_isHome() {
+        assertEquals(AppRoute.Home.route, startDestination)
     }
 }

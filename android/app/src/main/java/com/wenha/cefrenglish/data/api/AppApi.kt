@@ -9,8 +9,17 @@ interface AppApi {
     @POST("api/placement/assess")
     suspend fun assessPlacement(@Body request: PlacementRequestDto): PlacementResultDto
 
+    @GET("api/today-lesson")
+    suspend fun getTodayLesson(@Query("userId") userId: String): DailyLessonDto
+
+    @POST("api/today-lesson/regenerate")
+    suspend fun regenerateTodayLesson(@Body request: TodayLessonRegenerateRequestDto): DailyLessonDto
+
     @POST("api/lessons/next")
     suspend fun getNextLesson(@Body request: NextLessonRequestDto): LessonDto
+
+    @POST("api/lesson/submit")
+    suspend fun submitLesson(@Body request: LessonSubmitRequestDto): LessonSubmitResultDto
 
     @POST("api/writing/review")
     suspend fun submitWriting(@Body request: WritingReviewRequestDto): WritingReviewResultDto

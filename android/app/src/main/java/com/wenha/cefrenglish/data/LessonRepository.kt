@@ -1,56 +1,106 @@
 package com.wenha.cefrenglish.data
 
 import com.wenha.cefrenglish.data.api.AppApi
-import com.wenha.cefrenglish.data.api.CompleteLessonRequestDto
-import com.wenha.cefrenglish.data.api.NextLessonRequestDto
-import com.wenha.cefrenglish.data.api.WritingReviewRequestDto
-import com.wenha.cefrenglish.domain.Lesson
+import com.wenha.cefrenglish.data.api.LessonSubmitRequestDto
+import com.wenha.cefrenglish.data.api.TodayLessonRegenerateRequestDto
+import com.wenha.cefrenglish.domain.DailyLesson
+import com.wenha.cefrenglish.domain.LessonQuestion
+import com.wenha.cefrenglish.domain.LessonSubmissionResult
 import com.wenha.cefrenglish.domain.WritingReview
+import com.wenha.cefrenglish.domain.WritingRuleChecks
 
 interface LessonRepository {
-    suspend fun getNextLesson(userId: String, level: String): Lesson
-    suspend fun submitWriting(userId: String, lessonId: String, level: String, prompt: String, submission: String): WritingReview
-    suspend fun completeLesson(userId: String, level: String, lessonId: String)
+    suspend fun getTodayLesson(userId: String): DailyLesson
+    suspend fun regenerateTodayLesson(userId: String): DailyLesson
+    suspend fun submitLesson(
+        userId: String,
+        lessonInstanceId: String,
+        prompt: String,
+        level: String,
+        readingAnswers: List<String>,
+        grammarAnswers: List<String>,
+        writingSubmission: String,
+    ): LessonSubmissionResult
 }
 
 class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
-    override suspend fun getNextLesson(userId: String, level: String): Lesson {
-        val response = api.getNextLesson(NextLessonRequestDto(userId = userId, level = level))
-        return Lesson(
-            lessonId = response.lessonId,
-            level = response.level,
-            readingText = response.readingText,
-            grammarExplanation = response.grammarExplanation,
-            writingPrompt = response.writingPrompt,
-        )
+    override suspend fun getTodayLesson(userId: String): DailyLesson {
+        val response = api.getTodayLesson(userId)
+        return response.toDomain()
     }
 
-    override suspend fun submitWriting(
+    override suspend fun regenerateTodayLesson(userId: String): DailyLesson {
+        val response = api.regenerateTodayLesson(TodayLessonRegenerateRequestDto(userId))
+        return response.toDomain()
+    }
+
+    override suspend fun submitLesson(
         userId: String,
-        lessonId: String,
-        level: String,
+        lessonInstanceId: String,
         prompt: String,
-        submission: String,
-    ): WritingReview {
-        val response = api.submitWriting(
-            WritingReviewRequestDto(
+        level: String,
+        readingAnswers: List<String>,
+        grammarAnswers: List<String>,
+        writingSubmission: String,
+    ): LessonSubmissionResult {
+        val response = api.submitLesson(
+            LessonSubmitRequestDto(
                 userId = userId,
-                lessonId = lessonId,
-                level = level,
+                lessonInstanceId = lessonInstanceId,
                 prompt = prompt,
-                submission = submission,
+                level = level,
+                readingAnswers = readingAnswers,
+                grammarAnswers = grammarAnswers,
+                writingSubmission = writingSubmission,
             ),
         )
-        return WritingReview(
-            grammar = response.feedback.grammar,
-            vocabulary = response.feedback.vocabulary,
-            coherence = response.feedback.coherence,
-            suggestions = response.feedback.suggestions,
-            rewrite = response.feedback.rewrite,
+        return LessonSubmissionResult(
+            completed = response.completed,
+            currentLessonId = response.currentLessonId,
+            nextLessonId = response.nextLessonId,
+            todayCompleted = response.todayCompleted,
+            missingRequirements = response.missingRequirements,
+            ruleChecks = WritingRuleChecks(
+                notBlank = response.ruleChecks.notBlank,
+                minSentencesOk = response.ruleChecks.minSentencesOk,
+                onTopicLikely = response.ruleChecks.onTopicLikely,
+            ),
+            feedback = WritingReview(
+                grammar = response.feedback.grammar,
+                vocabulary = response.feedback.vocabulary,
+                coherence = response.feedback.coherence,
+                suggestions = response.feedback.suggestions,
+                rewrite = response.feedback.rewrite,
+            ),
         )
     }
-
-    override suspend fun completeLesson(userId: String, level: String, lessonId: String) {
-        api.completeLesson(CompleteLessonRequestDto(userId = userId, level = level, lessonId = lessonId))
-    }
 }
+
+private fun com.wenha.cefrenglish.data.api.DailyLessonDto.toDomain(): DailyLesson =
+    DailyLesson(
+        lessonInstanceId = lessonInstanceId,
+        templateId = templateId,
+        level = level,
+        theme = theme,
+        readingText = readingText,
+        readingQuestions = readingQuestions.map {
+            LessonQuestion(
+                questionId = it.questionId,
+                prompt = it.prompt,
+                choices = it.choices,
+                answer = it.answer,
+            )
+        },
+        grammarExplanation = grammarExplanation,
+        grammarQuestions = grammarQuestions.map {
+            LessonQuestion(
+                questionId = it.questionId,
+                prompt = it.prompt,
+                choices = it.choices,
+                answer = it.answer,
+            )
+        },
+        writingPrompt = writingPrompt,
+        writingRubric = writingRubric,
+        generationVersion = generationVersion,
+    )

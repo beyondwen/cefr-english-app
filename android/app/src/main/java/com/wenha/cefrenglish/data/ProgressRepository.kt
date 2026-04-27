@@ -12,8 +12,11 @@ class NetworkProgressRepository(private val api: AppApi) : ProgressRepository {
         val response = api.fetchSummary(userId)
         return ProgressSummary(
             currentLevel = response.currentLevel,
-            completedLessons = List(response.completedCount) { index -> "completed-$index" },
+            currentLessonId = response.currentLessonId,
+            completedCount = response.completedCount,
             nextLessonId = response.nextLessonId,
+            todayCompleted = response.todayCompleted,
+            recentWeaknesses = response.recentWeaknesses,
         )
     }
 }
