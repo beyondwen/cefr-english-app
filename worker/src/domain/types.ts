@@ -1,4 +1,6 @@
-export type CefrLevel = 'A1' | 'A2'
+export type CefrLevel = 'A1' | 'A2' | 'B1'
+
+export type Weakness = 'reading' | 'grammar' | 'writing'
 
 export type PlacementAnswer = {
   skill: 'reading' | 'grammar'
@@ -14,7 +16,7 @@ export type PlacementRequest = {
 
 export type PlacementResult = {
   level: CefrLevel
-  weaknesses: Array<'reading' | 'grammar' | 'writing'>
+  weaknesses: Weakness[]
 }
 
 export type LessonBlueprint = {
@@ -34,4 +36,55 @@ export type LessonPayload = {
   grammarExplanation: string
   grammarQuestions: string[]
   writingPrompt: string
+}
+
+export type LessonTemplate = {
+  templateId: string
+  level: CefrLevel
+  sequence: number
+  grammarFocus: string
+  readingTaskType: 'reading_mcq'
+  writingTaskType: 'short_paragraph'
+  themePool: string[]
+  targetWordRange: {
+    min: number
+    max: number
+  }
+  questionCounts: {
+    reading: number
+    grammar: number
+  }
+}
+
+export type LessonQuestion = {
+  questionId: string
+  prompt: string
+  choices: string[]
+  answer: string
+}
+
+export type LessonInstance = {
+  lessonInstanceId: string
+  userId: string
+  templateId: string
+  level: CefrLevel
+  theme: string
+  readingText: string
+  readingQuestions: LessonQuestion[]
+  grammarExplanation: string
+  grammarQuestions: LessonQuestion[]
+  writingPrompt: string
+  writingRubric: string[]
+  status: 'generated' | 'in_progress' | 'completed'
+  generationVersion: number
+  generatedAt: string
+  completedAt?: string | null
+}
+
+export type UserProfile = {
+  userId: string
+  currentLevel: CefrLevel
+  recentWeaknesses: Weakness[]
+  themeRotationState: 'life' | 'expression'
+  currentTemplateId: string | null
 }
