@@ -4,13 +4,17 @@ import com.wenha.cefrenglish.data.api.AppApi
 import com.wenha.cefrenglish.data.api.LessonSubmitRequestDto
 import com.wenha.cefrenglish.data.api.TodayLessonRegenerateRequestDto
 import com.wenha.cefrenglish.domain.DailyLesson
+import com.wenha.cefrenglish.domain.DialogueLine
+import com.wenha.cefrenglish.domain.KeySentence
 import com.wenha.cefrenglish.domain.LessonQuestion
 import com.wenha.cefrenglish.domain.LessonSubmissionResult
+import com.wenha.cefrenglish.domain.VocabularyItem
 import com.wenha.cefrenglish.domain.WritingReview
 import com.wenha.cefrenglish.domain.WritingRuleChecks
 
 interface LessonRepository {
     suspend fun getTodayLesson(userId: String): DailyLesson
+    suspend fun getSyllabusLesson(userId: String, level: String, moduleIndex: Int): DailyLesson
     suspend fun regenerateTodayLesson(userId: String): DailyLesson
     suspend fun submitLesson(
         userId: String,
@@ -26,6 +30,11 @@ interface LessonRepository {
 class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
     override suspend fun getTodayLesson(userId: String): DailyLesson {
         val response = api.getTodayLesson(userId)
+        return response.toDomain()
+    }
+
+    override suspend fun getSyllabusLesson(userId: String, level: String, moduleIndex: Int): DailyLesson {
+        val response = api.getSyllabusLesson(userId, level, moduleIndex)
         return response.toDomain()
     }
 
@@ -82,6 +91,31 @@ private fun com.wenha.cefrenglish.data.api.DailyLessonDto.toDomain(): DailyLesso
         templateId = templateId,
         level = level,
         theme = theme,
+        objectives = objectives,
+        warmupQuestions = warmupQuestions,
+        vocabulary = vocabulary.map {
+            VocabularyItem(
+                word = it.word,
+                meaning = it.meaning,
+                example = it.example,
+            )
+        },
+        keySentences = keySentences.map {
+            KeySentence(
+                pattern = it.pattern,
+                meaning = it.meaning,
+                examples = it.examples,
+            )
+        },
+        dialogue = dialogue.map {
+            DialogueLine(
+                speaker = it.speaker,
+                line = it.line,
+            )
+        },
+        speakingPractice = speakingPractice,
+        listeningPractice = listeningPractice,
+        reviewTasks = reviewTasks,
         readingText = readingText,
         readingQuestions = readingQuestions.map {
             LessonQuestion(

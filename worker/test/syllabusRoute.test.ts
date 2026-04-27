@@ -21,4 +21,27 @@ describe('GET /api/syllabus', () => {
 
     expect(response.status).toBe(400)
   })
+
+  it('regenerates and stores a syllabus for the selected CEFR level', async () => {
+    const app = createApp(createFakeEnv())
+    const response = await app.fetch(
+      new Request('http://localhost/api/syllabus/regenerate', {
+        method: 'POST',
+        body: JSON.stringify({ level: 'B2' }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      level: 'B2',
+      title: 'B2 课程大纲',
+      modules: [{ title: '核心能力入门' }],
+    })
+
+    const cached = await app.fetch(new Request('http://localhost/api/syllabus?level=B2'))
+    await expect(cached.json()).resolves.toMatchObject({
+      level: 'B2',
+      title: 'B2 课程大纲',
+    })
+  })
 })

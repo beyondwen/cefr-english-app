@@ -1,6 +1,6 @@
 import type { Env } from '../env'
 import { json } from '../lib/json'
-import { fakeAiProvider } from '../providers/aiProvider'
+import { createAiProvider } from '../providers/aiProvider'
 import { createLessonRepository } from '../repositories/lessonRepository'
 import { createProgressRepository } from '../repositories/progressRepository'
 import { createWritingReviewRepository } from '../repositories/writingReviewRepository'
@@ -22,7 +22,7 @@ export const handleLessonSubmit = async (request: Request, env: Env): Promise<Re
     level: payload.level,
     prompt: payload.prompt,
     submission: payload.writingSubmission,
-    aiProvider: fakeAiProvider,
+    aiProvider: createAiProvider(env),
   })
 
   await createWritingReviewRepository(env.DB).insertSubmission(

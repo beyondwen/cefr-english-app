@@ -28,6 +28,8 @@ fun CefrEnglishApp() {
     val container = remember { AppContainer(context) }
     val navController = rememberNavController()
     var userId by remember { mutableStateOf("") }
+    var selectedLessonLevel by remember { mutableStateOf<String?>(null) }
+    var selectedLessonModuleIndex by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         userId = container.getUserId()
@@ -43,13 +45,10 @@ fun CefrEnglishApp() {
             }
             HomeScreen(
                 viewModel = viewModel,
-                onStartPlacement = { navController.navigate(AppRoute.Placement.route) },
-                onContinueLesson = {
-                    if (viewModel.uiState.value.todayCompleted) {
-                        navController.navigate(AppRoute.Progress.route)
-                    } else {
-                        navController.navigate(AppRoute.Lesson.route)
-                    }
+                onStartModule = { level, moduleIndex ->
+                    selectedLessonLevel = level
+                    selectedLessonModuleIndex = moduleIndex
+                    navController.navigate(AppRoute.Lesson.route)
                 },
             )
         }
@@ -71,6 +70,8 @@ fun CefrEnglishApp() {
             LessonScreen(
                 viewModel = viewModel,
                 userId = userId,
+                selectedLevel = selectedLessonLevel,
+                selectedModuleIndex = selectedLessonModuleIndex,
                 onContinue = { navController.navigate(AppRoute.Progress.route) },
             )
         }

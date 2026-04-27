@@ -23,11 +23,30 @@ data class CourseSyllabusDto(
     val modules: List<SyllabusModuleDto>,
 )
 
+data class RegenerateSyllabusRequestDto(val level: String)
+
 data class LessonQuestionDto(
     val questionId: String,
     val prompt: String,
     val choices: List<String>,
     val answer: String,
+)
+
+data class VocabularyItemDto(
+    val word: String = "",
+    val meaning: String = "",
+    val example: String = "",
+)
+
+data class KeySentenceDto(
+    val pattern: String = "",
+    val meaning: String = "",
+    val examples: List<String> = emptyList(),
+)
+
+data class DialogueLineDto(
+    val speaker: String = "",
+    val line: String = "",
 )
 
 data class NextLessonRequestDto(val userId: String, val level: String)
@@ -39,6 +58,14 @@ data class DailyLessonDto(
     val templateId: String,
     val level: String,
     val theme: String,
+    val objectives: List<String> = emptyList(),
+    val warmupQuestions: List<String> = emptyList(),
+    val vocabulary: List<VocabularyItemDto> = emptyList(),
+    val keySentences: List<KeySentenceDto> = emptyList(),
+    val dialogue: List<DialogueLineDto> = emptyList(),
+    val speakingPractice: List<String> = emptyList(),
+    val listeningPractice: List<String> = emptyList(),
+    val reviewTasks: List<String> = emptyList(),
     val readingText: String,
     val readingQuestions: List<LessonQuestionDto>,
     val grammarExplanation: String,

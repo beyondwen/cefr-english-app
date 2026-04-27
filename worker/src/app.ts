@@ -1,9 +1,9 @@
 import { handleHealth } from './routes/health'
 import { handleLessonSubmit } from './routes/lessonSubmit'
-import { handleNextLesson, handleRegenerateTodayLesson, handleTodayLesson } from './routes/lessons'
+import { handleNextLesson, handleRegenerateTodayLesson, handleSyllabusModuleLesson, handleTodayLesson } from './routes/lessons'
 import { handlePlacement } from './routes/placement'
 import { handleCompleteLesson, handleSummary } from './routes/progress'
-import { handleSyllabus } from './routes/syllabus'
+import { handleRegenerateSyllabus, handleSyllabus } from './routes/syllabus'
 import { handleWritingReview } from './routes/writing'
 import type { Env } from './env'
 import { authorize } from './lib/auth'
@@ -17,9 +17,11 @@ export const createApp = (env: Env) => ({
     if (url.pathname === '/health') return handleHealth()
     if (url.pathname === '/api/placement/assess' && request.method === 'POST') return handlePlacement(request, env)
     if (url.pathname === '/api/today-lesson' && request.method === 'GET') return handleTodayLesson(request, env)
+    if (url.pathname === '/api/syllabus-lesson' && request.method === 'GET') return handleSyllabusModuleLesson(request, env)
     if (url.pathname === '/api/today-lesson/regenerate' && request.method === 'POST') return handleRegenerateTodayLesson(request, env)
     if (url.pathname === '/api/lesson/submit' && request.method === 'POST') return handleLessonSubmit(request, env)
     if (url.pathname === '/api/syllabus' && request.method === 'GET') return handleSyllabus(request, env)
+    if (url.pathname === '/api/syllabus/regenerate' && request.method === 'POST') return handleRegenerateSyllabus(request, env)
     if (url.pathname === '/api/lessons/next' && request.method === 'POST') return handleNextLesson(request, env)
     if (url.pathname === '/api/writing/review' && request.method === 'POST') return handleWritingReview(request, env)
     if (url.pathname === '/api/progress/complete' && request.method === 'POST') return handleCompleteLesson(request, env)

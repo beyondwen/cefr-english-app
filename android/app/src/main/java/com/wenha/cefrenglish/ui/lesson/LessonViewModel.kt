@@ -3,8 +3,11 @@ package com.wenha.cefrenglish.ui.lesson
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wenha.cefrenglish.data.LessonRepository
+import com.wenha.cefrenglish.domain.DialogueLine
+import com.wenha.cefrenglish.domain.KeySentence
 import com.wenha.cefrenglish.domain.LessonQuestion
 import com.wenha.cefrenglish.domain.LessonSubmissionResult
+import com.wenha.cefrenglish.domain.VocabularyItem
 import com.wenha.cefrenglish.domain.WritingReview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +17,15 @@ data class LessonUiState(
     val lessonInstanceId: String = "",
     val templateId: String = "",
     val level: String = "",
+    val theme: String = "",
+    val objectives: List<String> = emptyList(),
+    val warmupQuestions: List<String> = emptyList(),
+    val vocabulary: List<VocabularyItem> = emptyList(),
+    val keySentences: List<KeySentence> = emptyList(),
+    val dialogue: List<DialogueLine> = emptyList(),
+    val speakingPractice: List<String> = emptyList(),
+    val listeningPractice: List<String> = emptyList(),
+    val reviewTasks: List<String> = emptyList(),
     val readingText: String = "",
     val readingQuestions: List<LessonQuestion> = emptyList(),
     val grammarExplanation: String = "",
@@ -35,6 +47,15 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
     fun loadTodayLesson(userId: String) {
         viewModelScope.launch {
             runCatching { repository.getTodayLesson(userId) }
+                .onSuccess { lesson ->
+                    _uiState.value = lesson.toUiState()
+                }
+        }
+    }
+
+    fun loadSyllabusLesson(userId: String, level: String, moduleIndex: Int) {
+        viewModelScope.launch {
+            runCatching { repository.getSyllabusLesson(userId, level, moduleIndex) }
                 .onSuccess { lesson ->
                     _uiState.value = lesson.toUiState()
                 }
@@ -100,6 +121,15 @@ private fun com.wenha.cefrenglish.domain.DailyLesson.toUiState(): LessonUiState 
         lessonInstanceId = lessonInstanceId,
         templateId = templateId,
         level = level,
+        theme = theme,
+        objectives = objectives,
+        warmupQuestions = warmupQuestions,
+        vocabulary = vocabulary,
+        keySentences = keySentences,
+        dialogue = dialogue,
+        speakingPractice = speakingPractice,
+        listeningPractice = listeningPractice,
+        reviewTasks = reviewTasks,
         readingText = readingText,
         readingQuestions = readingQuestions,
         grammarExplanation = grammarExplanation,

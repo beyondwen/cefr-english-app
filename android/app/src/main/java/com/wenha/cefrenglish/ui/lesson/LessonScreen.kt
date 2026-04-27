@@ -20,9 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wenha.cefrenglish.domain.DialogueLine
+import com.wenha.cefrenglish.domain.KeySentence
 import com.wenha.cefrenglish.domain.LessonQuestion
+import com.wenha.cefrenglish.domain.VocabularyItem
 import com.wenha.cefrenglish.ui.common.AppBlue
 import com.wenha.cefrenglish.ui.common.AppGreen
+import com.wenha.cefrenglish.ui.common.AppInk
 import com.wenha.cefrenglish.ui.common.AppMuted
 import com.wenha.cefrenglish.ui.common.ChipRow
 import com.wenha.cefrenglish.ui.common.HeroPanel
@@ -38,12 +42,18 @@ import com.wenha.cefrenglish.ui.common.StepBadge
 fun LessonScreen(
     viewModel: LessonViewModel,
     userId: String,
+    selectedLevel: String?,
+    selectedModuleIndex: Int?,
     onContinue: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(userId) {
-        viewModel.loadTodayLesson(userId)
+    LaunchedEffect(userId, selectedLevel, selectedModuleIndex) {
+        if (selectedLevel != null && selectedModuleIndex != null) {
+            viewModel.loadSyllabusLesson(userId, selectedLevel, selectedModuleIndex)
+        } else {
+            viewModel.loadTodayLesson(userId)
+        }
     }
     LaunchedEffect(state.completed) {
         if (state.completed) onContinue()
@@ -56,11 +66,12 @@ fun LessonScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             HeroPanel(
-                title = state.templateId.ifBlank { "正在加载课程" },
-                subtitle = state.readingText.takeIf { it.isNotBlank() }
-                    ?: "正在准备今日阅读、语法和写作练习。",
+                title = state.theme.ifBlank { state.templateId.ifBlank { "正在加载课程" } },
+                subtitle = state.objectives.firstOrNull()
+                    ?: state.readingText.takeIf { it.isNotBlank() }
+                    ?: "正在准备词汇、句型、对话、阅读、语法和写作练习。",
                 badge = state.level.ifBlank { "今日课程" },
-                trailing = { Pill("3 步") },
+                trailing = { Pill("完整课") },
             )
 
             Column(
@@ -69,9 +80,39 @@ fun LessonScreen(
             ) {
                 LessonSectionHeader()
 
+                InfoListSection(
+                    step = "1",
+                    title = "学习目标",
+                    subtitle = "先明确这节课结束后要会什么。",
+                    items = state.objectives,
+                    emptyText = "正在加载学习目标...",
+                )
+
+                InfoListSection(
+                    step = "2",
+                    title = "热身问题",
+                    subtitle = "用自己的经验进入本课场景。",
+                    items = state.warmupQuestions,
+                    emptyText = "正在加载热身问题...",
+                )
+
+                VocabularySection(state.vocabulary)
+
+                KeySentenceSection(state.keySentences)
+
+                DialogueSection(state.dialogue)
+
+                InfoListSection(
+                    step = "6",
+                    title = "听说练习",
+                    subtitle = "先跟读，再替换关键词开口说。",
+                    items = state.listeningPractice + state.speakingPractice,
+                    emptyText = "正在加载听说练习...",
+                )
+
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StepBadge("1")
+                        StepBadge("7")
                         SectionTitle("阅读", "阅读短文，并简要回答问题。")
                     }
                     Text(
@@ -90,7 +131,7 @@ fun LessonScreen(
 
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StepBadge("2")
+                        StepBadge("8")
                         SectionTitle("语法", "在真实语境中使用目标句型。")
                     }
                     Text(
@@ -109,7 +150,7 @@ fun LessonScreen(
 
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StepBadge("3")
+                        StepBadge("9")
                         SectionTitle("写作", "用一段简短回答完成练习。")
                     }
                     Text(state.writingPrompt.ifBlank { "正在加载写作题目..." }, color = AppMuted)
@@ -122,6 +163,14 @@ fun LessonScreen(
                     )
                     ChipRow(state.writingRubric, emptyText = "正在加载评分标准")
                 }
+
+                InfoListSection(
+                    step = "10",
+                    title = "课后复习",
+                    subtitle = "完成这些任务后再进入下一节课。",
+                    items = state.reviewTasks,
+                    emptyText = "正在加载复习任务...",
+                )
 
                 state.submissionResult?.missingRequirements?.takeIf { it.isNotEmpty() }?.let { missing ->
                     SectionCard {
@@ -142,10 +191,12 @@ fun LessonScreen(
                     }
                 }
 
-                SecondaryAction(
-                    text = "重新生成课程",
-                    onClick = { viewModel.regenerate(userId) },
-                )
+                if (selectedLevel == null) {
+                    SecondaryAction(
+                        text = "重新生成课程",
+                        onClick = { viewModel.regenerate(userId) },
+                    )
+                }
                 PrimaryAction(
                     text = "提交课程",
                     enabled = state.lessonInstanceId.isNotBlank(),
@@ -166,8 +217,93 @@ private fun LessonSectionHeader() {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Pill("阅读", color = Color(0xFFEAF3FF), contentColor = AppBlue)
-        Pill("语法", color = Color(0xFFEFF9F2), contentColor = AppGreen)
+        Pill("句型", color = Color(0xFFEFF9F2), contentColor = AppGreen)
         Pill("写作", color = Color(0xFFFFF5D6), contentColor = Color(0xFF946200))
+    }
+}
+
+@Composable
+private fun InfoListSection(step: String, title: String, subtitle: String, items: List<String>, emptyText: String) {
+    SectionCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StepBadge(step)
+            SectionTitle(title, subtitle)
+        }
+        if (items.isEmpty()) {
+            Text(emptyText, color = AppMuted)
+        } else {
+            items.forEach { item ->
+                BulletText(item)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VocabularySection(items: List<VocabularyItem>) {
+    SectionCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StepBadge("3")
+            SectionTitle("核心词汇", "先学会本课最需要的词。")
+        }
+        if (items.isEmpty()) {
+            Text("正在加载核心词汇...", color = AppMuted)
+        } else {
+            items.forEach { item ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("${item.word}  ${item.meaning}", color = AppInk, fontWeight = FontWeight.Bold)
+                    if (item.example.isNotBlank()) {
+                        Text(item.example, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeySentenceSection(items: List<KeySentence>) {
+    SectionCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StepBadge("4")
+            SectionTitle("核心句型", "掌握可以替换使用的表达模板。")
+        }
+        if (items.isEmpty()) {
+            Text("正在加载核心句型...", color = AppMuted)
+        } else {
+            items.forEach { item ->
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(item.pattern, color = AppBlue, fontWeight = FontWeight.Bold)
+                    Text(item.meaning, color = AppMuted)
+                    item.examples.forEach { example -> BulletText(example) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DialogueSection(items: List<DialogueLine>) {
+    SectionCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StepBadge("5")
+            SectionTitle("情景对话", "把词汇和句型放进真实交流。")
+        }
+        if (items.isEmpty()) {
+            Text("正在加载情景对话...", color = AppMuted)
+        } else {
+            items.forEach { item ->
+                Text("${item.speaker}: ${item.line}", color = AppInk, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BulletText(text: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("•", color = AppGreen, fontWeight = FontWeight.Bold)
+        Text(text, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

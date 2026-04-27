@@ -47,14 +47,12 @@ import com.wenha.cefrenglish.ui.common.Pill
 import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
-import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.StatTile
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onStartPlacement: () -> Unit,
-    onContinueLesson: () -> Unit,
+    onStartModule: (level: String, moduleIndex: Int) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val currentLevel = state.currentLevel.ifBlank { "A1" }
@@ -99,10 +97,20 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        SectionTitle(
-                            title = syllabus.title,
-                            subtitle = syllabus.description,
-                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            SectionTitle(
+                                title = syllabus.title,
+                                subtitle = syllabus.description,
+                            )
+                            PrimaryAction(
+                                text = if (state.regeneratingLevel == selectedLevel) "正在生成大纲..." else "重新生成大纲",
+                                enabled = state.regeneratingLevel == null,
+                                onClick = { viewModel.regenerateSyllabus(selectedLevel) },
+                            )
+                        }
                         Pill(syllabus.level, color = Color(0xFFEAF3FF), contentColor = AppBlue)
                     }
                     LessonProgress(progress = progress, label = "当前学习进度")
@@ -122,22 +130,16 @@ fun HomeScreen(
                 }
 
                 syllabus.modules.forEachIndexed { index, module ->
-                    SyllabusModuleCard(index = index + 1, module = module)
+                    SyllabusModuleCard(
+                        index = index + 1,
+                        module = module,
+                        onStart = { onStartModule(selectedLevel, index) },
+                    )
                 }
 
                 SectionCard {
-                    SectionTitle("薄弱项", "今日课程仍会结合最近的薄弱项进行调整。")
+                    SectionTitle("薄弱项", "选择章节学习后，练习反馈会继续帮助你发现薄弱项。")
                     ChipRow(state.recentWeaknesses, emptyText = "暂无薄弱项")
-                }
-
-                if (state.shouldStartPlacement) {
-                    PrimaryAction("开始定级测评", onClick = onStartPlacement)
-                } else {
-                    PrimaryAction(
-                        text = if (state.todayCompleted) "查看学习进度" else "继续今日课程",
-                        onClick = onContinueLesson,
-                    )
-                    SecondaryAction("重新定级", onClick = onStartPlacement)
                 }
             }
         }
@@ -221,7 +223,7 @@ private fun LevelDropdownPill(
 }
 
 @Composable
-private fun SyllabusModuleCard(index: Int, module: SyllabusModule) {
+private fun SyllabusModuleCard(index: Int, module: SyllabusModule, onStart: () -> Unit) {
     SectionCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -248,6 +250,7 @@ private fun SyllabusModuleCard(index: Int, module: SyllabusModule) {
                 }
             }
         }
+        PrimaryAction("学习本章节", onClick = onStart)
     }
 }
 

@@ -82,6 +82,25 @@ export type LessonInstance = {
   templateId: string
   level: CefrLevel
   theme: string
+  objectives?: string[]
+  warmupQuestions?: string[]
+  vocabulary?: Array<{
+    word: string
+    meaning: string
+    example: string
+  }>
+  keySentences?: Array<{
+    pattern: string
+    meaning: string
+    examples: string[]
+  }>
+  dialogue?: Array<{
+    speaker: string
+    line: string
+  }>
+  speakingPractice?: string[]
+  listeningPractice?: string[]
+  reviewTasks?: string[]
   readingText: string
   readingQuestions: LessonQuestion[]
   grammarExplanation: string

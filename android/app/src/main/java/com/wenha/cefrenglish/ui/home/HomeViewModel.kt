@@ -17,6 +17,7 @@ data class HomeUiState(
     val todayCompleted: Boolean = false,
     val recentWeaknesses: List<String> = emptyList(),
     val selectedSyllabus: CourseSyllabus? = null,
+    val regeneratingLevel: String? = null,
 ) {
     val shouldStartPlacement: Boolean
         get() = currentLessonId == null && completedCount == 0
@@ -42,6 +43,7 @@ class HomeViewModel(
                         todayCompleted = summary.todayCompleted,
                         recentWeaknesses = summary.recentWeaknesses,
                         selectedSyllabus = _uiState.value.selectedSyllabus,
+                        regeneratingLevel = _uiState.value.regeneratingLevel,
                     )
                 }
         }
@@ -52,6 +54,22 @@ class HomeViewModel(
             runCatching { syllabusRepository.fetchSyllabus(level) }
                 .onSuccess { syllabus ->
                     _uiState.value = _uiState.value.copy(selectedSyllabus = syllabus)
+                }
+        }
+    }
+
+    fun regenerateSyllabus(level: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(regeneratingLevel = level)
+            runCatching { syllabusRepository.regenerateSyllabus(level) }
+                .onSuccess { syllabus ->
+                    _uiState.value = _uiState.value.copy(
+                        selectedSyllabus = syllabus,
+                        regeneratingLevel = null,
+                    )
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(regeneratingLevel = null)
                 }
         }
     }

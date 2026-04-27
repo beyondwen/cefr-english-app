@@ -22,11 +22,36 @@ data class CourseSyllabus(
     val modules: List<SyllabusModule>,
 )
 
+data class VocabularyItem(
+    val word: String,
+    val meaning: String,
+    val example: String,
+)
+
+data class KeySentence(
+    val pattern: String,
+    val meaning: String,
+    val examples: List<String>,
+)
+
+data class DialogueLine(
+    val speaker: String,
+    val line: String,
+)
+
 data class DailyLesson(
     val lessonInstanceId: String,
     val templateId: String,
     val level: String,
     val theme: String,
+    val objectives: List<String> = emptyList(),
+    val warmupQuestions: List<String> = emptyList(),
+    val vocabulary: List<VocabularyItem> = emptyList(),
+    val keySentences: List<KeySentence> = emptyList(),
+    val dialogue: List<DialogueLine> = emptyList(),
+    val speakingPractice: List<String> = emptyList(),
+    val listeningPractice: List<String> = emptyList(),
+    val reviewTasks: List<String> = emptyList(),
     val readingText: String,
     val readingQuestions: List<LessonQuestion>,
     val grammarExplanation: String,

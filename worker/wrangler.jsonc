@@ -9,6 +9,10 @@
       "custom_domain": true
     }
   ],
+  "vars": {
+    "LONGCAT_BASE_URL": "https://api.longcat.chat/openai",
+    "LONGCAT_MODEL": "LongCat-Flash-Chat"
+  },
   "d1_databases": [
     {
       "binding": "DB",

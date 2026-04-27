@@ -106,6 +106,14 @@ export const createFakeEnv = () => {
                   today_completed: typeof params[5] === 'number' ? Number(params[5]) : 0,
                 })
               }
+              if (sql.startsWith('INSERT OR REPLACE INTO course_syllabuses')) {
+                state.course_syllabuses.set(String(params[0]), {
+                  level: String(params[0]),
+                  title: String(params[1]),
+                  description: String(params[2]),
+                  modules_json: String(params[3]),
+                })
+              }
               return { success: true }
             },
             async first<T>() {

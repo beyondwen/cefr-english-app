@@ -24,4 +24,19 @@ export class SyllabusRepository {
       modules: JSON.parse(row.modules_json) as SyllabusModule[],
     }
   }
+
+  async upsert(syllabus: CourseSyllabus): Promise<void> {
+    await this.db
+      .prepare(
+        'INSERT OR REPLACE INTO course_syllabuses (level, title, description, modules_json, updated_at) VALUES (?, ?, ?, ?, ?)',
+      )
+      .bind(
+        syllabus.level,
+        syllabus.title,
+        syllabus.description,
+        JSON.stringify(syllabus.modules),
+        new Date().toISOString(),
+      )
+      .run()
+  }
 }

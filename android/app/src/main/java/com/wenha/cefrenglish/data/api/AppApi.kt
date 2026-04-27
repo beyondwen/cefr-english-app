@@ -12,8 +12,18 @@ interface AppApi {
     @GET("api/syllabus")
     suspend fun fetchSyllabus(@Query("level") level: String): CourseSyllabusDto
 
+    @POST("api/syllabus/regenerate")
+    suspend fun regenerateSyllabus(@Body request: RegenerateSyllabusRequestDto): CourseSyllabusDto
+
     @GET("api/today-lesson")
     suspend fun getTodayLesson(@Query("userId") userId: String): DailyLessonDto
+
+    @GET("api/syllabus-lesson")
+    suspend fun getSyllabusLesson(
+        @Query("userId") userId: String,
+        @Query("level") level: String,
+        @Query("moduleIndex") moduleIndex: Int,
+    ): DailyLessonDto
 
     @POST("api/today-lesson/regenerate")
     suspend fun regenerateTodayLesson(@Body request: TodayLessonRegenerateRequestDto): DailyLessonDto

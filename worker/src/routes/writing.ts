@@ -1,6 +1,6 @@
 import type { Env } from '../env'
 import { json } from '../lib/json'
-import { fakeAiProvider } from '../providers/aiProvider'
+import { createAiProvider } from '../providers/aiProvider'
 import { createWritingReviewRepository } from '../repositories/writingReviewRepository'
 import { reviewWriting } from '../services/writingReviewService'
 
@@ -17,7 +17,7 @@ export const handleWritingReview = async (request: Request, env: Env): Promise<R
     level: payload.level,
     prompt: payload.prompt,
     submission: payload.submission,
-    aiProvider: fakeAiProvider,
+    aiProvider: createAiProvider(env),
   })
 
   await createWritingReviewRepository(env.DB).insert(
