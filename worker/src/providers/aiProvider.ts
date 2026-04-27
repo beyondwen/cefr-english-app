@@ -12,6 +12,8 @@ export type AiProvider = {
     lessonId: string
     grammarFocus: string
     writingTask: string
+    weaknesses?: string[]
+    theme?: string
   }): Promise<{
     readingText: string
     readingQuestions: string[]
@@ -23,13 +25,14 @@ export type AiProvider = {
 }
 
 export const fakeAiProvider: AiProvider = {
-  async generateLesson({ lessonId, grammarFocus, writingTask }) {
+  async generateLesson({ lessonId, grammarFocus, writingTask, theme, weaknesses }) {
+    const weaknessText = weaknesses?.length ? `Focus more on ${weaknesses.join(', ')}.` : 'Balanced practice.'
     return {
-      readingText: `Sample reading for ${lessonId}`,
-      readingQuestions: ['Question 1'],
-      grammarExplanation: `Focus on ${grammarFocus}`,
-      grammarQuestions: ['Question 2'],
-      writingPrompt: `Write a ${writingTask} response.`,
+      readingText: `Sample reading for ${lessonId} about ${theme ?? 'daily life'}.`,
+      readingQuestions: ['What is the main idea?', 'Which detail is correct?'],
+      grammarExplanation: `Focus on ${grammarFocus}. ${weaknessText}`,
+      grammarQuestions: ['Choose the correct form.', 'Rewrite the sentence correctly.'],
+      writingPrompt: `Write a ${writingTask} response about ${theme ?? 'daily life'}.`,
     }
   },
   async generateWritingReview() {
