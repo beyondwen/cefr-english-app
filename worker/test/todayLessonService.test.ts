@@ -3,8 +3,8 @@ import { lessonTemplatesByLevel } from '../src/domain/lessonTemplates'
 import { getTodayLesson, regenerateTodayLesson } from '../src/services/todayLessonService'
 
 describe('lesson templates', () => {
-  it('contains at least 2 templates for each A1/A2/B1 level', () => {
-    expect(lessonTemplatesByLevel.A1.length).toBeGreaterThanOrEqual(2)
+  it('contains a full A1 self-study path and at least 2 templates for A2/B1', () => {
+    expect(lessonTemplatesByLevel.A1.length).toBeGreaterThanOrEqual(10)
     expect(lessonTemplatesByLevel.A2.length).toBeGreaterThanOrEqual(2)
     expect(lessonTemplatesByLevel.B1.length).toBeGreaterThanOrEqual(2)
   })

@@ -56,6 +56,7 @@ import com.wenha.cefrenglish.ui.common.StatTile
 fun HomeScreen(
     viewModel: HomeViewModel,
     onStartModule: (level: String, moduleIndex: Int) -> Unit,
+    onContinueLearning: () -> Unit,
     onStartPlacement: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -99,6 +100,33 @@ fun HomeScreen(
                 }
 
                 SectionCard {
+                    SectionTitle(
+                        title = if (state.completedCount == 0) "从 A1 第一课开始" else "继续学习",
+                        subtitle = if (state.todayCompleted) "今天课程已完成，明天继续下一课。" else "按固定顺序推进，不需要先定级。",
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        StatTile(
+                            modifier = Modifier.weight(1f),
+                            label = "已完成",
+                            value = "${state.completedCount}/${state.totalLessonCount.coerceAtLeast(10)}",
+                        )
+                        StatTile(
+                            modifier = Modifier.weight(1f),
+                            label = "下一课",
+                            value = state.nextLessonId ?: state.currentLessonId ?: "A1-01",
+                        )
+                    }
+                    PrimaryAction(
+                        text = if (state.todayCompleted) "查看今日课程" else "继续学习",
+                        onClick = onContinueLearning,
+                    )
+                    SecondaryAction(
+                        text = "AI 定级（可选）",
+                        onClick = onStartPlacement,
+                    )
+                }
+
+                SectionCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -116,10 +144,6 @@ fun HomeScreen(
                                 text = if (state.regeneratingLevel == selectedLevel) "正在生成大纲..." else "重新生成大纲",
                                 enabled = state.regeneratingLevel == null,
                                 onClick = { viewModel.regenerateSyllabus(selectedLevel) },
-                            )
-                            SecondaryAction(
-                                text = "AI 定级（可选）",
-                                onClick = onStartPlacement,
                             )
                         }
                         Pill(syllabus.level, color = Color(0xFFEAF3FF), contentColor = AppBlue)

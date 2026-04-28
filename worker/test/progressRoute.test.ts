@@ -11,7 +11,7 @@ describe('GET /api/me/summary', () => {
     await expect(response.json()).resolves.toEqual({
       currentLevel: 'A1',
       completedCount: 0,
-      totalLessonCount: 2,
+      totalLessonCount: 10,
       progressRatio: 0,
       currentLessonId: null,
       nextLessonId: null,
@@ -36,8 +36,8 @@ describe('GET /api/me/summary after progress', () => {
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toMatchObject({
       completedCount: 1,
-      totalLessonCount: 2,
-      progressRatio: 0.5,
+      totalLessonCount: 10,
+      progressRatio: 0.1,
     })
   })
 })

@@ -106,6 +106,13 @@ fun CefrEnglishApp() {
                         selectedLessonModuleIndex = moduleIndex
                         navController.navigate(AppRoute.Lesson.route)
                     },
+                    onContinueLearning = {
+                        selectedLessonLevel = null
+                        selectedLessonModuleIndex = null
+                        navController.navigate(AppRoute.Lesson.route) {
+                            launchSingleTop = true
+                        }
+                    },
                     onStartPlacement = {
                         navController.navigate(AppRoute.Placement.route) {
                             launchSingleTop = true
