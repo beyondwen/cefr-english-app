@@ -47,6 +47,7 @@ import com.wenha.cefrenglish.ui.common.LessonProgress
 import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.Pill
 import com.wenha.cefrenglish.ui.common.PrimaryAction
+import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
 import com.wenha.cefrenglish.ui.common.StatTile
@@ -67,9 +68,6 @@ fun HomeScreen(
     LearningPage {
         LaunchedEffect(selectedLevel) {
             viewModel.loadSyllabus(selectedLevel)
-        }
-        LaunchedEffect(state.shouldStartPlacement) {
-            if (state.shouldStartPlacement) onStartPlacement()
         }
         Column(
             modifier = Modifier
@@ -118,6 +116,10 @@ fun HomeScreen(
                                 text = if (state.regeneratingLevel == selectedLevel) "正在生成大纲..." else "重新生成大纲",
                                 enabled = state.regeneratingLevel == null,
                                 onClick = { viewModel.regenerateSyllabus(selectedLevel) },
+                            )
+                            SecondaryAction(
+                                text = "AI 定级（可选）",
+                                onClick = onStartPlacement,
                             )
                         }
                         Pill(syllabus.level, color = Color(0xFFEAF3FF), contentColor = AppBlue)

@@ -24,10 +24,7 @@ data class HomeUiState(
     val errorMessage: String? = null,
     val hasLoaded: Boolean = false,
     val lastUserId: String = "",
-) {
-    val shouldStartPlacement: Boolean
-        get() = hasLoaded && currentLessonId == null && completedCount == 0
-}
+)
 
 class HomeViewModel(
     private val repository: ProgressRepository,
