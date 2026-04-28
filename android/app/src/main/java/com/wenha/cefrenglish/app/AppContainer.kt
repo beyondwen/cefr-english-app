@@ -17,22 +17,11 @@ import com.wenha.cefrenglish.data.store.UserPrefsStore
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 class AppContainer(context: Context) {
     private val userPrefsStore = UserPrefsStore(context)
-    private val httpClient = OkHttpClient.Builder()
-        .addInterceptor { chain ->
-            val token = BuildConfig.CEFR_API_TOKEN
-            val request = if (token.isBlank()) {
-                chain.request()
-            } else {
-                chain.request().newBuilder()
-                    .header("Authorization", "Bearer $token")
-                    .build()
-            }
-            chain.proceed(request)
-        }
-        .build()
+    private val httpClient = createCefrHttpClient(BuildConfig.CEFR_API_TOKEN)
 
     private val api: AppApi = Retrofit.Builder()
         .baseUrl(BASE_URL)
@@ -56,3 +45,21 @@ class AppContainer(context: Context) {
         const val BASE_URL = "https://cefr.freedomjw.dpdns.org/"
     }
 }
+
+internal fun createCefrHttpClient(apiToken: String): OkHttpClient =
+    OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            val request = if (apiToken.isBlank()) {
+                chain.request()
+            } else {
+                chain.request().newBuilder()
+                    .header("Authorization", "Bearer $apiToken")
+                    .build()
+            }
+            chain.proceed(request)
+        }
+        .build()

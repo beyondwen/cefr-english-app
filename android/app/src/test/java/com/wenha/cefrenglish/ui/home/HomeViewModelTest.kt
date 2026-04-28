@@ -1,6 +1,7 @@
 package com.wenha.cefrenglish.ui.home
 
 import com.wenha.cefrenglish.testdoubles.FakeHomeRepository
+import com.wenha.cefrenglish.testdoubles.FakeSyllabusRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -17,7 +18,7 @@ class HomeViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         try {
             val repository = FakeHomeRepository()
-            val viewModel = HomeViewModel(repository)
+            val viewModel = HomeViewModel(repository, FakeSyllabusRepository())
 
             viewModel.refresh("u1")
 

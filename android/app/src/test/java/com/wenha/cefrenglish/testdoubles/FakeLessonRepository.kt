@@ -34,6 +34,14 @@ class FakeLessonRepository : LessonRepository {
         )
     }
 
+    override suspend fun getSyllabusLesson(userId: String, level: String, moduleIndex: Int): DailyLesson {
+        return getTodayLesson(userId).copy(
+            lessonInstanceId = "$userId:$level-module-${moduleIndex + 1}:v$version",
+            level = level,
+            theme = "module ${moduleIndex + 1}",
+        )
+    }
+
     override suspend fun regenerateTodayLesson(userId: String): DailyLesson {
         version += 1
         return getTodayLesson(userId)
