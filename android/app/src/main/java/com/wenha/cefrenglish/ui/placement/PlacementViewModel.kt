@@ -34,7 +34,7 @@ class PlacementViewModel(private val repository: PlacementRepository) : ViewMode
                 .onFailure {
                     _uiState.value = _uiState.value.copy(
                         isLoadingTest = false,
-                        errorMessage = "AI 定级题加载失败，已使用本地备用题。",
+                        errorMessage = "AI 定级题加载失败，请稍后重试。",
                     )
                 }
         }

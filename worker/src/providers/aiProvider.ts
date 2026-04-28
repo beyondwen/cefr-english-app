@@ -53,6 +53,7 @@ type OpenAiChatResponse = {
       content?: string
       reasoning_content?: string
       reasoning?: string
+      [key: string]: unknown
     }
   }>
 }
@@ -68,7 +69,7 @@ type LongCatConfig = {
 }
 
 const defaultLongCatBaseUrl = 'https://api.longcat.chat/openai'
-const defaultLongCatModel = 'LongCat-Flash-Thinking-2601'
+const defaultLongCatModel = 'LongCat-Flash-Lite'
 
 const syllabusShapeByLevel: Record<CourseSyllabus['level'], { unitCount: number; lessonsPerUnit: string; focus: string }> = {
   A1: {
@@ -215,12 +216,20 @@ const normalizePlacementQuestions = (value: unknown): PlacementTest['readingQues
   Array.isArray(value)
     ? value
         .map((item) => {
-          const parsed = item as { prompt?: unknown; options?: unknown; correctIndex?: unknown }
-          const options = asStringArray(parsed.options).slice(0, 4)
+          const parsed = item as { prompt?: unknown; question?: unknown; options?: unknown; choices?: unknown; correctIndex?: unknown; answerIndex?: unknown; correctAnswer?: unknown; answer?: unknown }
+          const prompt = String(parsed.prompt ?? parsed.question ?? '')
+          const rawOptions = parsed.options ?? parsed.choices
+          const choices = asStringArray(rawOptions).slice(0, 4)
+          const answerText = String(parsed.correctAnswer ?? parsed.answer ?? '')
+          const textIndex = answerText ? choices.findIndex((option) => option.toLowerCase() === answerText.toLowerCase()) : -1
           return {
-            prompt: String(parsed.prompt ?? ''),
-            options,
-            correctIndex: Number(parsed.correctIndex),
+            prompt,
+            options: choices,
+            correctIndex: Number.isInteger(Number(parsed.correctIndex))
+              ? Number(parsed.correctIndex)
+              : Number.isInteger(Number(parsed.answerIndex))
+                ? Number(parsed.answerIndex)
+                : textIndex,
           }
         })
         .filter((item) => item.prompt && item.options.length >= 3 && Number.isInteger(item.correctIndex) && item.correctIndex >= 0 && item.correctIndex < item.options.length)
@@ -246,7 +255,11 @@ const normalizePlacementTest = (value: unknown): PlacementTest => {
   }
 }
 
-const chatCompletion = async (config: Required<LongCatConfig>, messages: Array<{ role: 'system' | 'user'; content: string }>): Promise<string> => {
+const chatCompletion = async (
+  config: Required<LongCatConfig>,
+  messages: Array<{ role: 'system' | 'user'; content: string }>,
+  options: { temperature?: number; maxTokens?: number; jsonObject?: boolean } = {},
+): Promise<string> => {
   const endpoint = `${config.baseUrl.replace(/\/$/, '')}/v1/chat/completions`
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -258,7 +271,9 @@ const chatCompletion = async (config: Required<LongCatConfig>, messages: Array<{
       model: config.model,
       messages,
       stream: false,
-      temperature: 0.7,
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens ?? 2048,
+      ...(options.jsonObject ? { response_format: { type: 'json_object' } } : {}),
     }),
   })
 
@@ -269,9 +284,17 @@ const chatCompletion = async (config: Required<LongCatConfig>, messages: Array<{
 
   const data = (await response.json()) as OpenAiChatResponse
   const message = data.choices?.[0]?.message
-  const content = message?.content?.trim() || message?.reasoning_content?.trim() || message?.reasoning?.trim()
+  const content = message?.content?.trim() || message?.reasoning_content?.trim() || message?.reasoning?.trim() || findJsonLikeString(message)
   if (!content) throw new Error('LongCat response was empty')
   return content
+}
+
+const findJsonLikeString = (value: unknown): string => {
+  if (!value || typeof value !== 'object') return ''
+  for (const item of Object.values(value)) {
+    if (typeof item === 'string' && item.includes('{') && item.includes('}')) return item.trim()
+  }
+  return ''
 }
 
 export const fakeAiProvider: AiProvider = {
@@ -413,14 +436,20 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
         {
           role: 'system',
           content:
-            '你是 CEFR 英语分级测试命题老师。只返回严格 JSON，不要 Markdown，不要代码块。字段必须是 readingPassage, readingQuestions, grammarQuestions, writingPrompt, minWritingWords。题目面向中文母语成人学习者，但题干和选项用英文。correctIndex 从 0 开始。',
+            '你是 CEFR 英语分级测试命题老师。只返回一个严格 JSON object，不要 Markdown，不要代码块，不要解释，不要思考过程。字段必须是 readingPassage, readingQuestions, grammarQuestions, writingPrompt, minWritingWords。题目面向中文母语成人学习者，但题干和选项用英文。correctIndex 从 0 开始。',
         },
         {
           role: 'user',
-          content:
-            '生成一套 A1-A2 起点评估题：readingPassage 为 90-130 词英文短文；readingQuestions 恰好 5 题，每题 3 个选项；grammarQuestions 恰好 5 题，每题 3 个选项，覆盖 be 动词、一般现在时、过去时间、比较级、现在完成时；writingPrompt 用中文给出一个短写作任务；minWritingWords 为 30。',
+          content: [
+            '生成一套 A1-A2 起点评估题。',
+            'readingPassage: 90-130 词英文短文，主题换成日常生活、工作、旅行、学习中的一个，不要使用 Emma/hotel/music festival 这个备用题。',
+            'readingQuestions: 恰好 5 题，每题对象字段为 prompt, options, correctIndex；options 恰好 3 个英文选项。',
+            'grammarQuestions: 恰好 5 题，每题对象字段为 prompt, options, correctIndex；options 恰好 3 个英文选项；覆盖 be 动词、一般现在时、过去时间、比较级、现在完成时。',
+            'writingPrompt: 中文短写作任务。',
+            'minWritingWords: 30。',
+          ].join('\n'),
         },
-      ])
+      ], { temperature: 0.2, maxTokens: 2200, jsonObject: true })
 
       return normalizePlacementTest(parseJsonObject(content))
     },
@@ -472,6 +501,7 @@ export const createAiProvider = (config: LongCatConfig): AiProvider => {
         return await longCatProvider.generatePlacementTest()
       } catch (error) {
         console.error('LongCat placement test generation failed', error)
+        if (!allowFakeFallback) throw error
         return fakeAiProvider.generatePlacementTest()
       }
     },

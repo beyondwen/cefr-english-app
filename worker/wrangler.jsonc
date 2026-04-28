@@ -11,7 +11,7 @@
   ],
   "vars": {
     "LONGCAT_BASE_URL": "https://api.longcat.chat/openai",
-    "LONGCAT_MODEL": "LongCat-Flash-Thinking-2601"
+    "LONGCAT_MODEL": "LongCat-Flash-Lite"
   },
   "d1_databases": [
     {

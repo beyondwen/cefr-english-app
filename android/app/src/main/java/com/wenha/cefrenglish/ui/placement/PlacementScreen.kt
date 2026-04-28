@@ -25,12 +25,12 @@ import com.wenha.cefrenglish.ui.common.ChipRow
 import com.wenha.cefrenglish.ui.common.ErrorNotice
 import com.wenha.cefrenglish.ui.common.HeroPanel
 import com.wenha.cefrenglish.ui.common.LearningPage
+import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
 import com.wenha.cefrenglish.domain.PlacementQuestion
-import com.wenha.cefrenglish.domain.PlacementTest
 
 @Composable
 fun PlacementScreen(
@@ -41,15 +41,15 @@ fun PlacementScreen(
     LaunchedEffect(Unit) {
         viewModel.loadTest()
     }
-    val test = state.test ?: fallbackPlacementTest
-    var readingAnswers by remember(test) { mutableStateOf(List(test.readingQuestions.size) { -1 }) }
-    var grammarAnswers by remember(test) { mutableStateOf(List(test.grammarQuestions.size) { -1 }) }
+    val test = state.test
+    var readingAnswers by remember(test) { mutableStateOf(List(test?.readingQuestions?.size ?: 0) { -1 }) }
+    var grammarAnswers by remember(test) { mutableStateOf(List(test?.grammarQuestions?.size ?: 0) { -1 }) }
     var writingAnswer by remember { mutableStateOf("") }
-    val readingCorrect = readingAnswers.correctCount(test.readingQuestions)
-    val grammarCorrect = grammarAnswers.correctCount(test.grammarQuestions)
+    val readingCorrect = test?.let { readingAnswers.correctCount(it.readingQuestions) } ?: 0
+    val grammarCorrect = test?.let { grammarAnswers.correctCount(it.grammarQuestions) } ?: 0
     val writingWordCount = writingAnswer.wordCount()
     val allQuestionsAnswered = readingAnswers.all { it >= 0 } && grammarAnswers.all { it >= 0 }
-    val canSubmit = allQuestionsAnswered && writingWordCount >= test.minWritingWords && !state.isSubmitting
+    val canSubmit = test != null && allQuestionsAnswered && writingWordCount >= test.minWritingWords && !state.isSubmitting
 
     LearningPage {
         Column(
@@ -68,13 +68,18 @@ fun PlacementScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 state.errorMessage?.let { message ->
-                    ErrorNotice(message = message)
+                    ErrorNotice(message = message, onRetry = if (test == null) viewModel::loadTest else null)
                 }
 
+                if (test == null) {
+                    if (state.isLoadingTest) {
+                        LoadingNotice("正在用 AI 生成定级题...")
+                    }
+                } else {
                 SectionCard {
                     SectionTitle(
                         "能力测评",
-                        if (state.isLoadingTest) "正在生成 AI 定级题，当前显示备用题。" else "完成阅读、语法和短写作，系统会按答题情况判断起点。",
+                        "完成阅读、语法和短写作，系统会按答题情况判断起点。",
                     )
                     Text(
                         text = test.readingPassage,
@@ -128,6 +133,7 @@ fun PlacementScreen(
                         },
                     )
                 }
+                }
 
                 SectionCard {
                     SectionTitle(
@@ -179,71 +185,6 @@ private fun PlacementQuestionBlock(
         }
     }
 }
-
-private val fallbackPlacementTest = PlacementTest(
-    readingPassage = """
-        Emma works in a small hotel. She usually starts work at seven o'clock in the morning.
-        Yesterday the hotel was busy because many guests arrived for a music festival.
-        Emma helped three guests find their rooms, answered phone calls, and wrote a short email to a manager.
-        After work, she was tired, but she felt happy because the guests thanked her.
-    """.trimIndent(),
-    readingQuestions = listOf(
-        PlacementQuestion(
-            prompt = "Where does Emma work?",
-            options = listOf("In a school", "In a hotel", "In a supermarket"),
-            correctIndex = 1,
-        ),
-        PlacementQuestion(
-            prompt = "What time does Emma usually start work?",
-            options = listOf("At seven o'clock", "At nine o'clock", "At twelve o'clock"),
-            correctIndex = 0,
-        ),
-        PlacementQuestion(
-            prompt = "Why was the hotel busy yesterday?",
-            options = listOf("There was a music festival", "It was raining", "Emma had a meeting"),
-            correctIndex = 0,
-        ),
-        PlacementQuestion(
-            prompt = "What did Emma write?",
-            options = listOf("A story", "A short email", "A shopping list"),
-            correctIndex = 1,
-        ),
-        PlacementQuestion(
-            prompt = "How did Emma feel after work?",
-            options = listOf("Angry", "Tired but happy", "Bored"),
-            correctIndex = 1,
-        ),
-    ),
-    grammarQuestions = listOf(
-        PlacementQuestion(
-            prompt = "I _____ from China.",
-            options = listOf("am", "is", "are"),
-            correctIndex = 0,
-        ),
-        PlacementQuestion(
-            prompt = "She _____ coffee every morning.",
-            options = listOf("drink", "drinks", "drinking"),
-            correctIndex = 1,
-        ),
-        PlacementQuestion(
-            prompt = "We went to the park _____.",
-            options = listOf("yesterday", "tomorrow", "every day"),
-            correctIndex = 0,
-        ),
-        PlacementQuestion(
-            prompt = "This bag is _____ than that one.",
-            options = listOf("heavy", "heavier", "heaviest"),
-            correctIndex = 1,
-        ),
-        PlacementQuestion(
-            prompt = "I have lived here _____ 2022.",
-            options = listOf("for", "since", "at"),
-            correctIndex = 1,
-        ),
-    ),
-    writingPrompt = "介绍你昨天做了什么，以及今天想学习什么。",
-    minWritingWords = 30,
-)
 
 private fun List<Int>.updated(index: Int, value: Int): List<Int> =
     toMutableList().also { it[index] = value }
