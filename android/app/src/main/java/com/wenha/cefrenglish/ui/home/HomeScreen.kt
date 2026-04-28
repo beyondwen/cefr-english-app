@@ -59,11 +59,7 @@ fun HomeScreen(
     var selectedLevel by remember(currentLevel) { mutableStateOf(currentLevel.takeIf { it in cefrLevels } ?: "A1") }
     val syllabus = state.selectedSyllabus?.takeIf { it.level == selectedLevel }
         ?: fallbackSyllabuses.first { it.level == selectedLevel }
-    val progress = when {
-        state.todayCompleted -> 1f
-        state.completedCount == 0 -> 0.08f
-        else -> 0.35f
-    }
+    val progress = state.progressRatio
 
     LearningPage {
         LaunchedEffect(selectedLevel) {

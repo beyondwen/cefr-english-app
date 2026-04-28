@@ -9,6 +9,8 @@ class FakeProgressRepository : ProgressRepository {
             currentLevel = "A1",
             currentLessonId = "A1-01",
             completedCount = 1,
+            totalLessonCount = 2,
+            progressRatio = 0.5f,
             nextLessonId = "A1-02",
             todayCompleted = false,
             recentWeaknesses = listOf("grammar"),

@@ -97,6 +97,8 @@ data class ProgressSummary(
     val currentLevel: String,
     val currentLessonId: String?,
     val completedCount: Int,
+    val totalLessonCount: Int,
+    val progressRatio: Float,
     val nextLessonId: String?,
     val todayCompleted: Boolean,
     val recentWeaknesses: List<String>,

@@ -8,6 +8,8 @@ class FakeHomeRepository(
         currentLevel = "A2",
         currentLessonId = "A2-01",
         completedCount = 3,
+        totalLessonCount = 6,
+        progressRatio = 0.5f,
         nextLessonId = "A2-02",
         todayCompleted = false,
         recentWeaknesses = listOf("grammar"),

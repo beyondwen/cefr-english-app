@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 
 data class ProgressUiState(
     val completedCount: Int = 0,
+    val totalLessonCount: Int = 0,
+    val progressRatio: Float = 0f,
     val nextLessonId: String = "",
     val currentLevel: String = "",
     val currentLessonId: String = "",
@@ -26,6 +28,8 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
                 .onSuccess { result ->
                     _uiState.value = ProgressUiState(
                         completedCount = result.completedCount,
+                        totalLessonCount = result.totalLessonCount,
+                        progressRatio = result.progressRatio,
                         nextLessonId = result.nextLessonId.orEmpty(),
                         currentLevel = result.currentLevel,
                         currentLessonId = result.currentLessonId.orEmpty(),

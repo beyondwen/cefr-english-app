@@ -24,6 +24,7 @@ class HomeViewModelTest {
 
             assertEquals("A2-01", viewModel.uiState.value.currentLessonId)
             assertEquals(listOf("grammar"), viewModel.uiState.value.recentWeaknesses)
+            assertEquals(0.5f, viewModel.uiState.value.progressRatio)
         } finally {
             Dispatchers.resetMain()
         }

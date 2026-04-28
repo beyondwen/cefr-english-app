@@ -40,7 +40,7 @@ fun ProgressScreen(
             viewModel.refresh(userId)
         }
     }
-    val progress = if (state.todayCompleted) 1f else if (state.completedCount > 0) 0.45f else 0.08f
+    val progress = state.progressRatio
 
     LearningPage {
         Column(

@@ -1,4 +1,5 @@
 import type { CefrLevel } from '../domain/types'
+import { lessonTemplatesByLevel } from '../domain/lessonTemplates'
 import type { Env } from '../env'
 import { json } from '../lib/json'
 import { createLessonRepository } from '../repositories/lessonRepository'
@@ -11,10 +12,16 @@ export const handleSummary = async (request: Request, env: Env): Promise<Respons
   const user = userId ? await createUserRepository(env.DB).get(userId) : null
   const progress = userId ? await createProgressRepository(env.DB).get(userId) : null
   const activeLesson = userId ? await createLessonRepository(env.DB).findActiveByUserId(userId) : null
+  const currentLevel = user?.currentLevel ?? progress?.level ?? 'A1'
+  const completedCount = progress?.completedLessonIds.length ?? 0
+  const totalLessonCount = lessonTemplatesByLevel[currentLevel as CefrLevel]?.length ?? 0
+  const progressRatio = totalLessonCount > 0 ? completedCount / totalLessonCount : 0
 
   return json({
-    currentLevel: user?.currentLevel ?? progress?.level ?? 'A1',
-    completedCount: progress?.completedLessonIds.length ?? 0,
+    currentLevel,
+    completedCount,
+    totalLessonCount,
+    progressRatio,
     currentLessonId: activeLesson?.templateId ?? progress?.currentTemplateId ?? null,
     nextLessonId: progress?.currentTemplateId ?? activeLesson?.templateId ?? null,
     todayCompleted: progress?.todayCompleted ?? false,

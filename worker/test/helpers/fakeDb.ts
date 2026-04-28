@@ -160,7 +160,7 @@ export const createFakeEnv = () => {
                 }
                 return null
               }
-              if (sql.startsWith('SELECT completed_lesson_ids_json, level FROM progress')) {
+              if (sql.startsWith('SELECT completed_lesson_ids_json, level')) {
                 const row = state.progress.get(String(params[0]))
                 return row
                   ? ({

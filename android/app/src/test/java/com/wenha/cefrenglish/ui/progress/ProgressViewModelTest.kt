@@ -23,6 +23,7 @@ class ProgressViewModelTest {
 
             assertEquals(1, viewModel.uiState.value.completedCount)
             assertEquals("A1-02", viewModel.uiState.value.nextLessonId)
+            assertEquals(0.5f, viewModel.uiState.value.progressRatio)
         } finally {
             Dispatchers.resetMain()
         }

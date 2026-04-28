@@ -11,10 +11,33 @@ describe('GET /api/me/summary', () => {
     await expect(response.json()).resolves.toEqual({
       currentLevel: 'A1',
       completedCount: 0,
+      totalLessonCount: 2,
+      progressRatio: 0,
       currentLessonId: null,
       nextLessonId: null,
       todayCompleted: false,
       recentWeaknesses: [],
+    })
+  })
+})
+
+describe('GET /api/me/summary after progress', () => {
+  it('returns real progress ratio from completed lessons and level total', async () => {
+    const app = createApp(createFakeEnv())
+    await app.fetch(
+      new Request('http://localhost/api/progress/complete', {
+        method: 'POST',
+        body: JSON.stringify({ userId: 'u1', level: 'A1', lessonId: 'A1-01' }),
+      }),
+    )
+
+    const response = await app.fetch(new Request('http://localhost/api/me/summary?userId=u1'))
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      completedCount: 1,
+      totalLessonCount: 2,
+      progressRatio: 0.5,
     })
   })
 })

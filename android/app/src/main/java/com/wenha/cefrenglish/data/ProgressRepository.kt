@@ -14,6 +14,8 @@ class NetworkProgressRepository(private val api: AppApi) : ProgressRepository {
             currentLevel = response.currentLevel,
             currentLessonId = response.currentLessonId,
             completedCount = response.completedCount,
+            totalLessonCount = response.totalLessonCount,
+            progressRatio = response.progressRatio,
             nextLessonId = response.nextLessonId,
             todayCompleted = response.todayCompleted,
             recentWeaknesses = response.recentWeaknesses,
