@@ -18,6 +18,14 @@ describe('lesson templates', () => {
     expect(b1Second.templateId).toBe('B1-02')
     expect(b1Second.targetWordRange.min).toBeGreaterThanOrEqual(150)
   })
+
+  it('defines teacher guidance for every A1 lesson', () => {
+    for (const template of lessonTemplatesByLevel.A1) {
+      expect(template.teachingGoal).toBeTruthy()
+      expect(template.targetSentences?.length).toBeGreaterThanOrEqual(3)
+      expect(template.reviewFocus?.length).toBeGreaterThanOrEqual(3)
+    }
+  })
 })
 
 describe('today lesson service', () => {

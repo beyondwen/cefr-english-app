@@ -16,6 +16,9 @@ export type AiProvider = {
     writingTask: string
     weaknesses?: string[]
     theme?: string
+    teachingGoal?: string
+    targetSentences?: string[]
+    reviewFocus?: string[]
   }): Promise<{
     objectives?: string[]
     warmupQuestions?: string[]
@@ -298,28 +301,29 @@ const findJsonLikeString = (value: unknown): string => {
 }
 
 export const fakeAiProvider: AiProvider = {
-  async generateLesson({ lessonId, grammarFocus, writingTask, theme, weaknesses }) {
+  async generateLesson({ lessonId, grammarFocus, writingTask, theme, weaknesses, teachingGoal, targetSentences, reviewFocus }) {
     const weaknessText = weaknesses?.length ? `Focus more on ${weaknesses.join(', ')}.` : 'Balanced practice.'
     return {
-      objectives: ['理解本课目标表达', '能在真实场景中使用核心句型'],
+      objectives: [teachingGoal ?? '理解本课目标表达', '能在真实场景中使用核心句型'],
       warmupQuestions: ['你在这个场景里通常会说什么？'],
       vocabulary: [
         { word: 'hello', meaning: '你好', example: 'Hello, I am Anna.' },
       ],
       keySentences: [
-        { pattern: 'I am ...', meaning: '我……', examples: ['I am a student.', 'I am from China.'] },
+        { pattern: targetSentences?.[0] ?? 'I am ...', meaning: '我……', examples: ['I am a student.', 'I am from China.'] },
       ],
       dialogue: [
         { speaker: 'A', line: 'Hello, I am Anna.' },
         { speaker: 'B', line: 'Nice to meet you.' },
       ],
-      speakingPractice: ['跟读核心句型 3 遍。'],
-      listeningPractice: ['听老师读对话，圈出你听到的关键词。'],
+      speakingPractice: ['跟读核心句型 3 遍。', '替换关键词说出 3 个自己的句子。'],
+      listeningPractice: ['听老师读对话，圈出你听到的关键词。', '遮住文字后再听一遍，写下 2 个短句。'],
       readingText: `Sample reading for ${lessonId} about ${theme ?? 'daily life'}.`,
       readingQuestions: ['What is the main idea?', 'Which detail is correct?'],
       grammarExplanation: `Focus on ${grammarFocus}. ${weaknessText}`,
       grammarQuestions: ['Choose the correct form.', 'Rewrite the sentence correctly.'],
       writingPrompt: `Write a ${writingTask} response about ${theme ?? 'daily life'}.`,
+      reviewTasks: (reviewFocus?.length ? reviewFocus : ['核心句型']).map((item) => `复习 ${item}，并自己造 1 个句子。`),
     }
   },
   async generateWritingReview() {
@@ -411,7 +415,10 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
         `CEFR等级：${input.level}`,
         `课程ID：${input.lessonId}`,
         `章节主题：${input.theme ?? '日常英语'}`,
+        `本课可完成任务：${input.teachingGoal ?? '围绕主题完成一个真实交流任务'}`,
         `语法/知识点：${input.grammarFocus}`,
+        `必须覆盖的目标句型：${input.targetSentences?.join(' / ') || '按主题选择3-5个高频句型'}`,
+        `课后复习重点：${input.reviewFocus?.join(' / ') || '本课核心词汇、句型和语法'}`,
         `写作任务目标：${input.writingTask}`,
         `薄弱项：${input.weaknesses?.join(', ') || '无'}`,
       ].join('\n')
@@ -424,7 +431,7 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
         },
         {
           role: 'user',
-          content: `${prompt}\n\nJSON要求：objectives 2-4条；warmupQuestions 2条；vocabulary 6-10个词，每个含 word/meaning/example；keySentences 3-5个句型，每个含 pattern/meaning/examples；dialogue 6-10轮短对话；speakingPractice 3-5条跟读或替换练习；listeningPractice 2-4条听辨/听写任务；readingText 为80-180词英文短文；readingQuestions 为2-4个中文阅读问题；grammarExplanation 为120-220字中文语法讲解，要讲清楚怎么用；grammarQuestions 为3-5个中文语法练习；writingPrompt 为一个贴合章节的中文写作题；reviewTasks 3-5条课后复习任务。`,
+          content: `${prompt}\n\nJSON要求：objectives 2-4条，第一条必须改写“本课可完成任务”，让学习者知道学完能做什么；warmupQuestions 2条；vocabulary 6-10个词，每个含 word/meaning/example；keySentences 3-5个句型，每个含 pattern/meaning/examples，必须优先使用“必须覆盖的目标句型”；dialogue 6-10轮短对话；speakingPractice 3-5条跟读或替换练习，每条必须具体说明读哪一句或替换什么词；listeningPractice 2-4条听辨/听写任务，要能由手机朗读 dialogue 或 keySentences 完成；readingText 为80-180词英文短文；readingQuestions 为2-4个中文阅读问题；grammarExplanation 为120-220字中文语法讲解，要讲清楚怎么用；grammarQuestions 为3-5个中文语法练习；writingPrompt 为一个贴合章节的中文写作题；reviewTasks 3-5条课后复习任务，必须覆盖“课后复习重点”。`,
         },
       ])
 

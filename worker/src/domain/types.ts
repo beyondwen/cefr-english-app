@@ -73,6 +73,9 @@ export type LessonTemplate = {
   readingTaskType: 'reading_mcq'
   writingTaskType: 'short_paragraph'
   themePool: string[]
+  teachingGoal?: string
+  targetSentences?: string[]
+  reviewFocus?: string[]
   targetWordRange: {
     min: number
     max: number

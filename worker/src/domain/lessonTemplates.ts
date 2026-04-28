@@ -9,6 +9,9 @@ const createTemplate = (
   themePool: string[],
   targetWordRange: LessonTemplate['targetWordRange'],
   questionCounts: LessonTemplate['questionCounts'],
+  teachingGoal?: string,
+  targetSentences: string[] = [],
+  reviewFocus: string[] = [],
 ): LessonTemplate => ({
   templateId: `${level}-${String(sequence).padStart(2, '0')}`,
   level,
@@ -17,6 +20,9 @@ const createTemplate = (
   readingTaskType,
   writingTaskType,
   themePool,
+  teachingGoal,
+  targetSentences,
+  reviewFocus,
   targetWordRange,
   questionCounts,
 })
@@ -32,6 +38,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['letters and sounds', 'classroom English', 'numbers and dates'],
       { min: 60, max: 100 },
       { reading: 3, grammar: 3 },
+      '能听懂并说出课堂里最常用的英文指令、数字和日期。',
+      ['How do you spell ...?', 'Can you repeat that?', 'It is number ...'],
+      ['字母发音', '数字和日期', '课堂指令'],
     ),
     createTemplate(
       'A1',
@@ -42,6 +51,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['self introduction', 'name and country', 'job and identity'],
       { min: 60, max: 100 },
       { reading: 3, grammar: 3 },
+      '能用 be 动词介绍自己的姓名、国家、身份和简单状态。',
+      ['I am ...', 'You are ...', 'He/She is ...', 'Are you ...?'],
+      ['主语代词', 'am/is/are', '自我介绍'],
     ),
     createTemplate(
       'A1',
@@ -52,6 +64,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['people and things', 'objects around me', 'simple descriptions'],
       { min: 60, max: 100 },
       { reading: 3, grammar: 3 },
+      '能介绍身边的人和物，并正确使用 this/that、a/an 和复数。',
+      ['This is a ...', 'That is an ...', 'These are ...', 'They are ...'],
+      ['a/an', 'this/that', '名词复数'],
     ),
     createTemplate(
       'A1',
@@ -62,6 +77,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['family and friends', 'relationships', 'appearance and personality'],
       { min: 60, max: 100 },
       { reading: 3, grammar: 3 },
+      '能介绍家庭和朋友，并用 have/has 连接简单描述。',
+      ['I have ...', 'She has ...', 'He is ... and ...', 'My ... is ...'],
+      ['have/has', 'and/but', '人物描述'],
     ),
     createTemplate(
       'A1',
@@ -72,6 +90,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['daily routine', 'time and weekdays', 'frequency adverbs'],
       { min: 70, max: 110 },
       { reading: 3, grammar: 3 },
+      '能描述一天的日常安排，并说明时间和频率。',
+      ['I usually ...', 'She often ...', 'I ... at ...', 'On Monday, I ...'],
+      ['一般现在时', '第三人称单数', '频率副词'],
     ),
     createTemplate(
       'A1',
@@ -82,6 +103,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['food and shopping', 'prices and quantities', 'ordering food'],
       { min: 70, max: 110 },
       { reading: 3, grammar: 3 },
+      '能在购物或点餐场景中表达数量、价格和需求。',
+      ['I would like ...', 'How much is ...?', 'There is some ...', 'There are many ...'],
+      ['可数/不可数名词', 'some/any', '价格表达'],
     ),
     createTemplate(
       'A1',
@@ -92,6 +116,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['places in town', 'directions', 'where is it'],
       { min: 70, max: 110 },
       { reading: 3, grammar: 3 },
+      '能说明某个地点在哪里，并进行简单问路。',
+      ['There is a ...', 'It is next to ...', 'Where is ...?', 'Go straight.'],
+      ['there is/are', '地点介词', '问路表达'],
     ),
     createTemplate(
       'A1',
@@ -102,6 +129,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['abilities', 'polite requests', 'appointments and help'],
       { min: 70, max: 110 },
       { reading: 3, grammar: 3 },
+      '能表达能力、请求帮助，并约定简单时间。',
+      ['I can ...', 'Can you ...?', 'Can I ...?', 'Let us meet at ...'],
+      ['can/cannot', '礼貌请求', '约时间'],
     ),
     createTemplate(
       'A1',
@@ -112,6 +142,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['yesterday and weekend', 'was and were', 'short past events'],
       { min: 80, max: 120 },
       { reading: 3, grammar: 3 },
+      '能用最基础的过去时讲述昨天或周末发生的事。',
+      ['I was ...', 'We were ...', 'I went to ...', 'I had ...'],
+      ['was/were', '常见过去式', '过去时间词'],
     ),
     createTemplate(
       'A1',
@@ -122,6 +155,9 @@ export const lessonTemplatesByLevel: Record<CefrLevel, LessonTemplate[]> = {
       ['A1 review', 'shopping directions appointments', 'personal short writing'],
       { min: 80, max: 120 },
       { reading: 3, grammar: 3 },
+      '能综合完成 A1 常见生活场景中的介绍、询问、请求和短写作。',
+      ['I am ... and I have ...', 'I usually ...', 'There is ...', 'Can I ...?'],
+      ['A1 核心句型', '真实场景表达', '短段落写作'],
     ),
   ],
   A2: [

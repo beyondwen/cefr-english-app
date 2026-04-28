@@ -121,15 +121,23 @@ fun LessonScreen(
 
                 InfoListSection(
                     step = "6",
-                    title = "听说练习",
-                    subtitle = "先跟读，再替换关键词开口说。",
-                    items = state.listeningPractice + state.speakingPractice,
-                    emptyText = "正在加载听说练习...",
+                    title = "听力练习",
+                    subtitle = "先听关键词和句型，再听对话。",
+                    items = state.listeningPractice,
+                    emptyText = "正在加载听力练习...",
+                )
+
+                InfoListSection(
+                    step = "7",
+                    title = "开口练习",
+                    subtitle = "跟读后替换关键词，说出自己的句子。",
+                    items = state.speakingPractice,
+                    emptyText = "正在加载开口练习...",
                 )
 
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StepBadge("7")
+                        StepBadge("8")
                         SectionTitle("阅读", "阅读短文，并简要回答问题。")
                     }
                     Text(
@@ -148,7 +156,7 @@ fun LessonScreen(
 
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StepBadge("8")
+                        StepBadge("9")
                         SectionTitle("语法", "在真实语境中使用目标句型。")
                     }
                     Text(
@@ -167,7 +175,7 @@ fun LessonScreen(
 
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StepBadge("9")
+                        StepBadge("10")
                         SectionTitle("写作", "用一段简短回答完成练习。")
                     }
                     Text(state.writingPrompt.ifBlank { "正在加载写作题目..." }, color = AppMuted)
@@ -182,7 +190,7 @@ fun LessonScreen(
                 }
 
                 InfoListSection(
-                    step = "10",
+                    step = "11",
                     title = "课后复习",
                     subtitle = "完成这些任务后再进入下一节课。",
                     items = state.reviewTasks,

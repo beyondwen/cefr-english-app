@@ -45,14 +45,22 @@ const buildLessonInstance = (input: {
   templateId: input.template.templateId,
   level: input.template.level,
   theme: input.theme,
-  objectives: input.generated.objectives,
+  objectives: input.generated.objectives?.length ? input.generated.objectives : [input.template.teachingGoal ?? `完成 ${input.theme} 场景表达。`],
   warmupQuestions: input.generated.warmupQuestions,
   vocabulary: input.generated.vocabulary,
-  keySentences: input.generated.keySentences,
+  keySentences: input.generated.keySentences?.length
+    ? input.generated.keySentences
+    : input.template.targetSentences?.map((pattern) => ({
+        pattern,
+        meaning: '本课目标句型',
+        examples: [],
+      })),
   dialogue: input.generated.dialogue,
   speakingPractice: input.generated.speakingPractice,
   listeningPractice: input.generated.listeningPractice,
-  reviewTasks: input.generated.reviewTasks,
+  reviewTasks: input.generated.reviewTasks?.length
+    ? input.generated.reviewTasks
+    : input.template.reviewFocus?.map((item) => `复习 ${item}，并自己造 1 个句子。`),
   readingText: input.generated.readingText,
   readingQuestions: createLessonQuestions(input.generated.readingQuestions, `${input.template.templateId}-reading`),
   grammarExplanation: input.generated.grammarExplanation,
@@ -110,6 +118,9 @@ export const getTodayLesson = async (input: {
     writingTask: template.writingTaskType,
     weaknesses: profile.recentWeaknesses,
     theme,
+    teachingGoal: template.teachingGoal,
+    targetSentences: template.targetSentences,
+    reviewFocus: template.reviewFocus,
   })
 
   const lesson = buildLessonInstance({
@@ -148,6 +159,9 @@ export const regenerateTodayLesson = async (input: {
     writingTask: template.writingTaskType,
     weaknesses: profile.recentWeaknesses,
     theme,
+    teachingGoal: template.teachingGoal,
+    targetSentences: template.targetSentences,
+    reviewFocus: template.reviewFocus,
   })
   const lesson = buildLessonInstance({
     userId: input.userId,
