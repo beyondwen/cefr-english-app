@@ -23,3 +23,24 @@ describe('POST /api/placement/assess', () => {
     await expect(response.json()).resolves.toEqual({ level: 'A2', weaknesses: ['grammar'] })
   })
 })
+
+describe('GET /api/placement/test', () => {
+  it('returns a placement test', async () => {
+    const app = createApp(createFakeEnv())
+    const response = await app.fetch(new Request('http://localhost/api/placement/test'))
+
+    expect(response.status).toBe(200)
+    const payload = (await response.json()) as {
+      readingPassage?: string
+      readingQuestions?: unknown[]
+      grammarQuestions?: unknown[]
+      writingPrompt?: string
+      minWritingWords?: number
+    }
+    expect(payload.readingPassage).toBeTruthy()
+    expect(payload.readingQuestions).toHaveLength(5)
+    expect(payload.grammarQuestions).toHaveLength(5)
+    expect(payload.writingPrompt).toBeTruthy()
+    expect(payload.minWritingWords).toBeGreaterThanOrEqual(20)
+  })
+})

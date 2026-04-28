@@ -10,6 +10,20 @@ data class PlacementRequestDto(
 
 data class PlacementResultDto(val level: String, val weaknesses: List<String>)
 
+data class PlacementQuestionDto(
+    val prompt: String,
+    val options: List<String>,
+    val correctIndex: Int,
+)
+
+data class PlacementTestDto(
+    val readingPassage: String,
+    val readingQuestions: List<PlacementQuestionDto>,
+    val grammarQuestions: List<PlacementQuestionDto>,
+    val writingPrompt: String,
+    val minWritingWords: Int,
+)
+
 data class SyllabusModuleDto(
     val title: String,
     val goal: String,

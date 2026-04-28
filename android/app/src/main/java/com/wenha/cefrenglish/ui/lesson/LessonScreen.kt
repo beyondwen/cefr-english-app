@@ -29,8 +29,10 @@ import com.wenha.cefrenglish.ui.common.AppGreen
 import com.wenha.cefrenglish.ui.common.AppInk
 import com.wenha.cefrenglish.ui.common.AppMuted
 import com.wenha.cefrenglish.ui.common.ChipRow
+import com.wenha.cefrenglish.ui.common.ErrorNotice
 import com.wenha.cefrenglish.ui.common.HeroPanel
 import com.wenha.cefrenglish.ui.common.LearningPage
+import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.Pill
 import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SecondaryAction
@@ -58,6 +60,14 @@ fun LessonScreen(
     LaunchedEffect(state.completed) {
         if (state.completed) onContinue()
     }
+    val canSubmit = state.lessonInstanceId.isNotBlank() &&
+        state.readingAnswers.isNotEmpty() &&
+        state.grammarAnswers.isNotEmpty() &&
+        state.readingAnswers.all { it.isNotBlank() } &&
+        state.grammarAnswers.all { it.isNotBlank() } &&
+        state.writingSubmission.isNotBlank() &&
+        !state.isSubmitting &&
+        !state.isLoading
 
     LearningPage {
         Column(
@@ -79,6 +89,13 @@ fun LessonScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 LessonSectionHeader()
+
+                if (state.isLoading) {
+                    LoadingNotice("正在准备课程内容...")
+                }
+                state.errorMessage?.let { message ->
+                    ErrorNotice(message = message, onRetry = { viewModel.retryLastLoad() })
+                }
 
                 InfoListSection(
                     step = "1",
@@ -193,13 +210,14 @@ fun LessonScreen(
 
                 if (selectedLevel == null) {
                     SecondaryAction(
-                        text = "重新生成课程",
+                        text = if (state.isLoading) "正在重新生成..." else "重新生成课程",
+                        enabled = !state.isLoading && !state.isSubmitting,
                         onClick = { viewModel.regenerate(userId) },
                     )
                 }
                 PrimaryAction(
-                    text = "提交课程",
-                    enabled = state.lessonInstanceId.isNotBlank(),
+                    text = if (state.isSubmitting) "正在提交..." else "提交课程",
+                    enabled = canSubmit,
                     onClick = { viewModel.submitLesson(userId) },
                 )
             }

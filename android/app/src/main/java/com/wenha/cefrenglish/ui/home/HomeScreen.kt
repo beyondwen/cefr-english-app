@@ -40,9 +40,11 @@ import com.wenha.cefrenglish.ui.common.AppInk
 import com.wenha.cefrenglish.ui.common.AppLine
 import com.wenha.cefrenglish.ui.common.AppMuted
 import com.wenha.cefrenglish.ui.common.ChipRow
+import com.wenha.cefrenglish.ui.common.ErrorNotice
 import com.wenha.cefrenglish.ui.common.HeroPanel
 import com.wenha.cefrenglish.ui.common.LearningPage
 import com.wenha.cefrenglish.ui.common.LessonProgress
+import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.Pill
 import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
@@ -53,6 +55,7 @@ import com.wenha.cefrenglish.ui.common.StatTile
 fun HomeScreen(
     viewModel: HomeViewModel,
     onStartModule: (level: String, moduleIndex: Int) -> Unit,
+    onStartPlacement: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val currentLevel = state.currentLevel.ifBlank { "A1" }
@@ -64,6 +67,9 @@ fun HomeScreen(
     LearningPage {
         LaunchedEffect(selectedLevel) {
             viewModel.loadSyllabus(selectedLevel)
+        }
+        LaunchedEffect(state.shouldStartPlacement) {
+            if (state.shouldStartPlacement) onStartPlacement()
         }
         Column(
             modifier = Modifier
@@ -87,6 +93,13 @@ fun HomeScreen(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                if (state.isLoading) {
+                    LoadingNotice("正在加载学习进度...")
+                }
+                state.errorMessage?.let { message ->
+                    ErrorNotice(message = message, onRetry = { viewModel.retryRefresh() })
+                }
+
                 SectionCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

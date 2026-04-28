@@ -7,7 +7,17 @@ type TableState = {
   lesson_instances: Map<string, { lesson_json: string; status: string; template_id: string; generation_version: number; level: string }>
   lesson_submissions: Row[]
   writing_reviews: Row[]
-  progress: Map<string, { level: string; completed_lesson_ids_json: string; current_template_id: string | null; current_lesson_instance_id: string | null; today_completed: number }>
+  progress: Map<
+    string,
+    {
+      level: string
+      completed_lesson_ids_json: string
+      current_template_id: string | null
+      current_lesson_instance_id: string | null
+      today_completed: number
+      last_completed_date: string | null
+    }
+  >
   course_syllabuses: Map<string, { level: string; title: string; description: string; modules_json: string }>
 }
 
@@ -104,6 +114,7 @@ export const createFakeEnv = () => {
                   current_template_id: params[3] == null ? null : String(params[3]),
                   current_lesson_instance_id: params[4] == null ? null : String(params[4]),
                   today_completed: typeof params[5] === 'number' ? Number(params[5]) : 0,
+                  last_completed_date: params[6] == null ? null : String(params[6]),
                 })
               }
               if (sql.startsWith('INSERT OR REPLACE INTO course_syllabuses')) {
@@ -169,6 +180,7 @@ export const createFakeEnv = () => {
                       current_template_id: row.current_template_id,
                       current_lesson_instance_id: row.current_lesson_instance_id,
                       today_completed: row.today_completed,
+                      last_completed_date: row.last_completed_date,
                     } as T)
                   : null
               }

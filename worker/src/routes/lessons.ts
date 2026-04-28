@@ -10,6 +10,7 @@ import { getSyllabusModuleLesson, getTodayLesson, regenerateTodayLesson } from '
 
 export const handleNextLesson = async (request: Request, env: Env): Promise<Response> => {
   const payload = (await request.json()) as { userId: string; level: CefrLevel }
+  if (!payload.userId || !payload.level) return json({ error: 'Invalid lesson request' }, 400)
   const aiProvider = createAiProvider(env)
   const lesson = await getNextLesson({
     userId: payload.userId,
@@ -23,6 +24,7 @@ export const handleNextLesson = async (request: Request, env: Env): Promise<Resp
 
 export const handleTodayLesson = async (request: Request, env: Env): Promise<Response> => {
   const userId = new URL(request.url).searchParams.get('userId') ?? ''
+  if (!userId) return json({ error: 'Missing userId' }, 400)
   const aiProvider = createAiProvider(env)
   const lesson = await getTodayLesson({
     userId,
@@ -63,6 +65,7 @@ export const handleSyllabusModuleLesson = async (request: Request, env: Env): Pr
 
 export const handleRegenerateTodayLesson = async (request: Request, env: Env): Promise<Response> => {
   const payload = (await request.json()) as { userId: string }
+  if (!payload.userId) return json({ error: 'Missing userId' }, 400)
   const aiProvider = createAiProvider(env)
   const lesson = await regenerateTodayLesson({
     userId: payload.userId,

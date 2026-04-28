@@ -17,6 +17,16 @@ export const handleLessonSubmit = async (request: Request, env: Env): Promise<Re
     grammarAnswers: string[]
     writingSubmission: string
   }
+  if (
+    !payload.userId ||
+    !payload.lessonInstanceId ||
+    !payload.level ||
+    !Array.isArray(payload.readingAnswers) ||
+    !Array.isArray(payload.grammarAnswers) ||
+    typeof payload.writingSubmission !== 'string'
+  ) {
+    return json({ error: 'Invalid lesson submission' }, 400)
+  }
 
   const reviewResult = await reviewWriting({
     level: payload.level,

@@ -1,4 +1,4 @@
-import type { CourseSyllabus } from '../domain/types'
+import type { CourseSyllabus, PlacementTest } from '../domain/types'
 
 export type WritingReview = {
   grammar: string
@@ -43,6 +43,7 @@ export type AiProvider = {
     writingPrompt: string
   }>
   generateSyllabus(input: { level: CourseSyllabus['level'] }): Promise<CourseSyllabus>
+  generatePlacementTest(): Promise<PlacementTest>
   generateWritingReview(input: { level: string; prompt: string; submission: string }): Promise<WritingReview>
 }
 
@@ -50,6 +51,8 @@ type OpenAiChatResponse = {
   choices?: Array<{
     message?: {
       content?: string
+      reasoning_content?: string
+      reasoning?: string
     }
   }>
 }
@@ -61,10 +64,11 @@ type LongCatConfig = {
   LONGCAT_API_KEY?: string
   LONGCAT_BASE_URL?: string
   LONGCAT_MODEL?: string
+  ALLOW_FAKE_AI_FALLBACK?: string
 }
 
 const defaultLongCatBaseUrl = 'https://api.longcat.chat/openai'
-const defaultLongCatModel = 'LongCat-Flash-Chat'
+const defaultLongCatModel = 'LongCat-Flash-Thinking-2601'
 
 const syllabusShapeByLevel: Record<CourseSyllabus['level'], { unitCount: number; lessonsPerUnit: string; focus: string }> = {
   A1: {
@@ -207,6 +211,41 @@ const normalizeSyllabus = (level: CourseSyllabus['level'], value: unknown): Cour
   }
 }
 
+const normalizePlacementQuestions = (value: unknown): PlacementTest['readingQuestions'] =>
+  Array.isArray(value)
+    ? value
+        .map((item) => {
+          const parsed = item as { prompt?: unknown; options?: unknown; correctIndex?: unknown }
+          const options = asStringArray(parsed.options).slice(0, 4)
+          return {
+            prompt: String(parsed.prompt ?? ''),
+            options,
+            correctIndex: Number(parsed.correctIndex),
+          }
+        })
+        .filter((item) => item.prompt && item.options.length >= 3 && Number.isInteger(item.correctIndex) && item.correctIndex >= 0 && item.correctIndex < item.options.length)
+    : []
+
+const normalizePlacementTest = (value: unknown): PlacementTest => {
+  const item = value as Partial<PlacementTest>
+  const readingQuestions = normalizePlacementQuestions(item.readingQuestions).slice(0, 5)
+  const grammarQuestions = normalizePlacementQuestions(item.grammarQuestions).slice(0, 5)
+  const writingPrompt = String(item.writingPrompt ?? '')
+  const minWritingWords = Number(item.minWritingWords ?? 30)
+
+  if (!item.readingPassage || readingQuestions.length !== 5 || grammarQuestions.length !== 5 || !writingPrompt || minWritingWords < 20) {
+    throw new Error('LongCat placement test response was incomplete')
+  }
+
+  return {
+    readingPassage: String(item.readingPassage),
+    readingQuestions,
+    grammarQuestions,
+    writingPrompt,
+    minWritingWords,
+  }
+}
+
 const chatCompletion = async (config: Required<LongCatConfig>, messages: Array<{ role: 'system' | 'user'; content: string }>): Promise<string> => {
   const endpoint = `${config.baseUrl.replace(/\/$/, '')}/v1/chat/completions`
   const response = await fetch(endpoint, {
@@ -229,7 +268,8 @@ const chatCompletion = async (config: Required<LongCatConfig>, messages: Array<{
   }
 
   const data = (await response.json()) as OpenAiChatResponse
-  const content = data.choices?.[0]?.message?.content
+  const message = data.choices?.[0]?.message
+  const content = message?.content?.trim() || message?.reasoning_content?.trim() || message?.reasoning?.trim()
   if (!content) throw new Error('LongCat response was empty')
   return content
 }
@@ -282,6 +322,30 @@ export const fakeAiProvider: AiProvider = {
       ],
     }
   },
+  async generatePlacementTest() {
+    return fallbackPlacementTest
+  },
+}
+
+const fallbackPlacementTest: PlacementTest = {
+  readingPassage:
+    "Emma works in a small hotel. She usually starts work at seven o'clock in the morning. Yesterday the hotel was busy because many guests arrived for a music festival. Emma helped three guests find their rooms, answered phone calls, and wrote a short email to a manager. After work, she was tired, but she felt happy because the guests thanked her.",
+  readingQuestions: [
+    { prompt: 'Where does Emma work?', options: ['In a school', 'In a hotel', 'In a supermarket'], correctIndex: 1 },
+    { prompt: 'What time does Emma usually start work?', options: ["At seven o'clock", "At nine o'clock", "At twelve o'clock"], correctIndex: 0 },
+    { prompt: 'Why was the hotel busy yesterday?', options: ['There was a music festival', 'It was raining', 'Emma had a meeting'], correctIndex: 0 },
+    { prompt: 'What did Emma write?', options: ['A story', 'A short email', 'A shopping list'], correctIndex: 1 },
+    { prompt: 'How did Emma feel after work?', options: ['Angry', 'Tired but happy', 'Bored'], correctIndex: 1 },
+  ],
+  grammarQuestions: [
+    { prompt: 'I _____ from China.', options: ['am', 'is', 'are'], correctIndex: 0 },
+    { prompt: 'She _____ coffee every morning.', options: ['drink', 'drinks', 'drinking'], correctIndex: 1 },
+    { prompt: 'We went to the park _____.', options: ['yesterday', 'tomorrow', 'every day'], correctIndex: 0 },
+    { prompt: 'This bag is _____ than that one.', options: ['heavy', 'heavier', 'heaviest'], correctIndex: 1 },
+    { prompt: 'I have lived here _____ 2022.', options: ['for', 'since', 'at'], correctIndex: 1 },
+  ],
+  writingPrompt: '介绍你昨天做了什么，以及今天想学习什么。',
+  minWritingWords: 30,
 }
 
 export const createLongCatProvider = (config: LongCatConfig): AiProvider | null => {
@@ -344,6 +408,23 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
       return normalizeLesson(parseJsonObject(content))
     },
 
+    async generatePlacementTest() {
+      const content = await chatCompletion(resolved, [
+        {
+          role: 'system',
+          content:
+            '你是 CEFR 英语分级测试命题老师。只返回严格 JSON，不要 Markdown，不要代码块。字段必须是 readingPassage, readingQuestions, grammarQuestions, writingPrompt, minWritingWords。题目面向中文母语成人学习者，但题干和选项用英文。correctIndex 从 0 开始。',
+        },
+        {
+          role: 'user',
+          content:
+            '生成一套 A1-A2 起点评估题：readingPassage 为 90-130 词英文短文；readingQuestions 恰好 5 题，每题 3 个选项；grammarQuestions 恰好 5 题，每题 3 个选项，覆盖 be 动词、一般现在时、过去时间、比较级、现在完成时；writingPrompt 用中文给出一个短写作任务；minWritingWords 为 30。',
+        },
+      ])
+
+      return normalizePlacementTest(parseJsonObject(content))
+    },
+
     async generateWritingReview(input) {
       const content = await chatCompletion(resolved, [
         {
@@ -365,6 +446,7 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
 export const createAiProvider = (config: LongCatConfig): AiProvider => {
   const longCatProvider = createLongCatProvider(config)
   if (!longCatProvider) return fakeAiProvider
+  const allowFakeFallback = config.ALLOW_FAKE_AI_FALLBACK === 'true'
 
   return {
     async generateLesson(input) {
@@ -372,6 +454,7 @@ export const createAiProvider = (config: LongCatConfig): AiProvider => {
         return await longCatProvider.generateLesson(input)
       } catch (error) {
         console.error('LongCat lesson generation failed', error)
+        if (!allowFakeFallback) throw error
         return fakeAiProvider.generateLesson(input)
       }
     },
@@ -380,7 +463,16 @@ export const createAiProvider = (config: LongCatConfig): AiProvider => {
         return await longCatProvider.generateSyllabus(input)
       } catch (error) {
         console.error('LongCat syllabus generation failed', error)
+        if (!allowFakeFallback) throw error
         return fakeAiProvider.generateSyllabus(input)
+      }
+    },
+    async generatePlacementTest() {
+      try {
+        return await longCatProvider.generatePlacementTest()
+      } catch (error) {
+        console.error('LongCat placement test generation failed', error)
+        return fakeAiProvider.generatePlacementTest()
       }
     },
     async generateWritingReview(input) {
@@ -388,6 +480,7 @@ export const createAiProvider = (config: LongCatConfig): AiProvider => {
         return await longCatProvider.generateWritingReview(input)
       } catch (error) {
         console.error('LongCat writing review failed', error)
+        if (!allowFakeFallback) throw error
         return fakeAiProvider.generateWritingReview(input)
       }
     },

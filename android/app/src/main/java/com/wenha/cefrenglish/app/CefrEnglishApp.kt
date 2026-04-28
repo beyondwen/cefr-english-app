@@ -6,11 +6,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import com.wenha.cefrenglish.ui.home.HomeScreen
 import com.wenha.cefrenglish.ui.home.HomeViewModel
 import com.wenha.cefrenglish.ui.lesson.LessonScreen
@@ -30,60 +38,114 @@ fun CefrEnglishApp() {
     var userId by remember { mutableStateOf("") }
     var selectedLessonLevel by remember { mutableStateOf<String?>(null) }
     var selectedLessonModuleIndex by remember { mutableStateOf<Int?>(null) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     LaunchedEffect(Unit) {
         userId = container.getUserId()
     }
 
-    NavHost(navController = navController, startDestination = startDestination) {
-        composable(AppRoute.Home.route) {
-            val viewModel = viewModel<HomeViewModel> {
-                HomeViewModel(container.progressRepository, container.syllabusRepository)
-            }
-            LaunchedEffect(userId) {
-                viewModel.refresh(userId)
-            }
-            HomeScreen(
-                viewModel = viewModel,
-                onStartModule = { level, moduleIndex ->
-                    selectedLessonLevel = level
-                    selectedLessonModuleIndex = moduleIndex
-                    navController.navigate(AppRoute.Lesson.route)
-                },
-            )
-        }
-        composable(AppRoute.Placement.route) {
-            val viewModel = viewModel<PlacementViewModel> {
-                PlacementViewModel(container.placementRepository)
-            }
-            PlacementScreen(viewModel = viewModel) {
-                navController.navigate(AppRoute.Home.route) {
-                    popUpTo(AppRoute.Home.route) { inclusive = true }
-                    launchSingleTop = true
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            if (currentRoute != AppRoute.Placement.route) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = currentRoute == AppRoute.Home.route,
+                        onClick = {
+                            navController.navigate(AppRoute.Home.route) {
+                                popUpTo(AppRoute.Home.route)
+                                launchSingleTop = true
+                            }
+                        },
+                        label = { Text("首页") },
+                        icon = {},
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == AppRoute.Lesson.route,
+                        onClick = {
+                            selectedLessonLevel = null
+                            selectedLessonModuleIndex = null
+                            navController.navigate(AppRoute.Lesson.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        label = { Text("今日课程") },
+                        icon = {},
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == AppRoute.Progress.route,
+                        onClick = {
+                            navController.navigate(AppRoute.Progress.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        label = { Text("进度") },
+                        icon = {},
+                    )
                 }
             }
-        }
-        composable(AppRoute.Lesson.route) {
-            val viewModel = viewModel<LessonViewModel> {
-                LessonViewModel(container.lessonRepository)
+        },
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = startDestination,
+            modifier = Modifier.padding(innerPadding),
+        ) {
+            composable(AppRoute.Home.route) {
+                val viewModel = viewModel<HomeViewModel> {
+                    HomeViewModel(container.progressRepository, container.syllabusRepository)
+                }
+                LaunchedEffect(userId) {
+                    viewModel.refresh(userId)
+                }
+                HomeScreen(
+                    viewModel = viewModel,
+                    onStartModule = { level, moduleIndex ->
+                        selectedLessonLevel = level
+                        selectedLessonModuleIndex = moduleIndex
+                        navController.navigate(AppRoute.Lesson.route)
+                    },
+                    onStartPlacement = {
+                        navController.navigate(AppRoute.Placement.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
-            LessonScreen(
-                viewModel = viewModel,
-                userId = userId,
-                selectedLevel = selectedLessonLevel,
-                selectedModuleIndex = selectedLessonModuleIndex,
-                onContinue = { navController.navigate(AppRoute.Progress.route) },
-            )
-        }
-        composable(AppRoute.Progress.route) {
-            val viewModel = viewModel<ProgressViewModel> {
-                ProgressViewModel(container.progressRepository)
+            composable(AppRoute.Placement.route) {
+                val viewModel = viewModel<PlacementViewModel> {
+                    PlacementViewModel(container.placementRepository)
+                }
+                PlacementScreen(viewModel = viewModel) {
+                    navController.navigate(AppRoute.Home.route) {
+                        popUpTo(AppRoute.Home.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             }
-            ProgressScreen(
-                viewModel = viewModel,
-                userId = userId,
-                onRefresh = {},
-            )
+            composable(AppRoute.Lesson.route) {
+                val viewModel = viewModel<LessonViewModel> {
+                    LessonViewModel(container.lessonRepository)
+                }
+                LessonScreen(
+                    viewModel = viewModel,
+                    userId = userId,
+                    selectedLevel = selectedLessonLevel,
+                    selectedModuleIndex = selectedLessonModuleIndex,
+                    onContinue = { navController.navigate(AppRoute.Progress.route) },
+                )
+            }
+            composable(AppRoute.Progress.route) {
+                val viewModel = viewModel<ProgressViewModel> {
+                    ProgressViewModel(container.progressRepository)
+                }
+                ProgressScreen(
+                    viewModel = viewModel,
+                    userId = userId,
+                    onRefresh = {},
+                )
+            }
         }
     }
 }

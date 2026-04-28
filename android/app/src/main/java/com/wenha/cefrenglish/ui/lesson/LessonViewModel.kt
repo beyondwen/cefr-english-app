@@ -38,6 +38,16 @@ data class LessonUiState(
     val feedback: WritingReview? = null,
     val submissionResult: LessonSubmissionResult? = null,
     val completed: Boolean = false,
+    val isLoading: Boolean = false,
+    val isSubmitting: Boolean = false,
+    val errorMessage: String? = null,
+    val lastLoadRequest: LessonLoadRequest? = null,
+)
+
+data class LessonLoadRequest(
+    val userId: String,
+    val level: String? = null,
+    val moduleIndex: Int? = null,
 )
 
 class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
@@ -46,19 +56,47 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
 
     fun loadTodayLesson(userId: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null,
+                lastLoadRequest = LessonLoadRequest(userId = userId),
+            )
             runCatching { repository.getTodayLesson(userId) }
                 .onSuccess { lesson ->
-                    _uiState.value = lesson.toUiState()
+                    _uiState.value = lesson.toUiState().copy(lastLoadRequest = LessonLoadRequest(userId = userId))
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "无法加载课程，请检查网络后重试。",
+                    )
                 }
         }
     }
 
     fun loadSyllabusLesson(userId: String, level: String, moduleIndex: Int) {
         viewModelScope.launch {
+            val request = LessonLoadRequest(userId = userId, level = level, moduleIndex = moduleIndex)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, lastLoadRequest = request)
             runCatching { repository.getSyllabusLesson(userId, level, moduleIndex) }
                 .onSuccess { lesson ->
-                    _uiState.value = lesson.toUiState()
+                    _uiState.value = lesson.toUiState().copy(lastLoadRequest = request)
                 }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "无法加载章节课程，请检查网络后重试。",
+                    )
+                }
+        }
+    }
+
+    fun retryLastLoad() {
+        val request = _uiState.value.lastLoadRequest ?: return
+        if (request.level != null && request.moduleIndex != null) {
+            loadSyllabusLesson(request.userId, request.level, request.moduleIndex)
+        } else {
+            loadTodayLesson(request.userId)
         }
     }
 
@@ -84,9 +122,16 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
 
     fun regenerate(userId: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             runCatching { repository.regenerateTodayLesson(userId) }
                 .onSuccess { lesson ->
-                    _uiState.value = lesson.toUiState()
+                    _uiState.value = lesson.toUiState().copy(lastLoadRequest = LessonLoadRequest(userId = userId))
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "无法重新生成课程，请稍后再试。",
+                    )
                 }
         }
     }
@@ -95,6 +140,7 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
         val lesson = _uiState.value
         if (lesson.lessonInstanceId.isBlank()) return
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSubmitting = true, errorMessage = null)
             runCatching {
                 repository.submitLesson(
                     userId = userId,
@@ -110,8 +156,16 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
                     feedback = result.feedback,
                     submissionResult = result,
                     completed = result.completed,
+                    isSubmitting = false,
+                    errorMessage = null,
                 )
             }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        errorMessage = "提交失败，请检查网络后重试。",
+                    )
+                }
         }
     }
 }
@@ -138,4 +192,6 @@ private fun com.wenha.cefrenglish.domain.DailyLesson.toUiState(): LessonUiState 
         writingRubric = writingRubric,
         readingAnswers = List(readingQuestions.size) { "" },
         grammarAnswers = List(grammarQuestions.size) { "" },
+        isLoading = false,
+        errorMessage = null,
     )

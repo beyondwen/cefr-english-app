@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +46,7 @@ val AppLine = Color(0xFFE6ECF5)
 val AppBg = Color(0xFFF5F8FC)
 val AppGreen = Color(0xFF16A34A)
 val AppYellow = Color(0xFFFFC857)
+val AppRed = Color(0xFFDC2626)
 
 private val CardShape = RoundedCornerShape(8.dp)
 private val PillShape = RoundedCornerShape(999.dp)
@@ -92,7 +94,7 @@ fun HeroPanel(
                 ),
             )
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 24.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -106,18 +108,18 @@ fun HeroPanel(
             }
             trailing?.invoke()
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = title,
             color = Color.White,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
         Text(
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 4.dp),
             text = subtitle,
             color = Color.White.copy(alpha = 0.86f),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
         )
     }
 }
@@ -148,6 +150,30 @@ fun SectionTitle(title: String, subtitle: String? = null) {
         Text(title, color = AppInk, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         if (subtitle != null) {
             Text(subtitle, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+fun ErrorNotice(message: String, onRetry: (() -> Unit)? = null) {
+    SectionCard {
+        SectionTitle("加载失败", message)
+        if (onRetry != null) {
+            SecondaryAction(text = "重试", onClick = onRetry)
+        }
+    }
+}
+
+@Composable
+fun LoadingNotice(message: String) {
+    SectionCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = AppBlue)
+            Text(message, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

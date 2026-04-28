@@ -6,6 +6,9 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface AppApi {
+    @GET("api/placement/test")
+    suspend fun fetchPlacementTest(): PlacementTestDto
+
     @POST("api/placement/assess")
     suspend fun assessPlacement(@Body request: PlacementRequestDto): PlacementResultDto
 

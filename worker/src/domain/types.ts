@@ -19,6 +19,20 @@ export type PlacementResult = {
   weaknesses: Weakness[]
 }
 
+export type PlacementQuestion = {
+  prompt: string
+  options: string[]
+  correctIndex: number
+}
+
+export type PlacementTest = {
+  readingPassage: string
+  readingQuestions: PlacementQuestion[]
+  grammarQuestions: PlacementQuestion[]
+  writingPrompt: string
+  minWritingWords: number
+}
+
 export type LessonBlueprint = {
   lessonId: string
   unitIndex: number

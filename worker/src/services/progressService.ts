@@ -1,6 +1,11 @@
 import { lessonTemplatesByLevel } from '../domain/lessonTemplates'
 import type { CefrLevel, LessonSubmitResult } from '../domain/types'
 
+export const currentDateKey = (date = new Date()): string => date.toISOString().slice(0, 10)
+
+const allAnswered = (answers: string[], expectedCount: number): boolean =>
+  answers.length >= expectedCount && answers.slice(0, expectedCount).every((answer) => answer.trim().length > 0)
+
 export const completeLesson = async (input: {
   userId: string
   level: CefrLevel
@@ -8,14 +13,21 @@ export const completeLesson = async (input: {
   progressRepo: {
     get(
       userId: string,
-    ): Promise<{ completedLessonIds: string[]; level: string; currentTemplateId: string | null; currentLessonInstanceId: string | null; todayCompleted: boolean } | null>
+    ): Promise<{
+      completedLessonIds: string[]
+      level: string
+      currentTemplateId: string | null
+      currentLessonInstanceId: string | null
+      todayCompleted: boolean
+      lastCompletedDate: string | null
+    } | null>
     upsert(input: {
       userId: string
       level: string
       completedLessonIds: string[]
       currentTemplateId: string | null
       currentLessonInstanceId: string | null
-      todayCompleted: boolean
+      lastCompletedDate: string | null
     }): Promise<void>
   }
 }) => {
@@ -25,6 +37,7 @@ export const completeLesson = async (input: {
     currentTemplateId: null,
     currentLessonInstanceId: null,
     todayCompleted: false,
+    lastCompletedDate: null,
   }
   const completedLessonIds = [...new Set([...current.completedLessonIds, input.lessonId])]
   const allIds = lessonTemplatesByLevel[input.level].map((item) => item.templateId)
@@ -35,7 +48,7 @@ export const completeLesson = async (input: {
     completedLessonIds,
     currentTemplateId: nextLessonId,
     currentLessonInstanceId: null,
-    todayCompleted: true,
+    lastCompletedDate: currentDateKey(),
   })
 
   return { completedLessonIds, nextLessonId }
@@ -53,14 +66,21 @@ export const submitLesson = async (input: {
   progressRepo: {
     get(
       userId: string,
-    ): Promise<{ completedLessonIds: string[]; level: string; currentTemplateId: string | null; currentLessonInstanceId: string | null; todayCompleted: boolean } | null>
+    ): Promise<{
+      completedLessonIds: string[]
+      level: string
+      currentTemplateId: string | null
+      currentLessonInstanceId: string | null
+      todayCompleted: boolean
+      lastCompletedDate: string | null
+    } | null>
     upsert(input: {
       userId: string
       level: string
       completedLessonIds: string[]
       currentTemplateId: string | null
       currentLessonInstanceId: string | null
-      todayCompleted: boolean
+      lastCompletedDate: string | null
     }): Promise<void>
   }
   reviewResult: {
@@ -81,8 +101,8 @@ export const submitLesson = async (input: {
 
   const template = lessonTemplatesByLevel[lesson.level].find((item) => item.templateId === lesson.templateId)
   const missingRequirements: string[] = []
-  if (input.readingAnswers.length < (template?.questionCounts.reading ?? 0)) missingRequirements.push('reading_incomplete')
-  if (input.grammarAnswers.length < (template?.questionCounts.grammar ?? 0)) missingRequirements.push('grammar_incomplete')
+  if (!allAnswered(input.readingAnswers, template?.questionCounts.reading ?? 0)) missingRequirements.push('reading_incomplete')
+  if (!allAnswered(input.grammarAnswers, template?.questionCounts.grammar ?? 0)) missingRequirements.push('grammar_incomplete')
   if (!input.reviewResult.ruleChecks.notBlank) missingRequirements.push('writing_blank')
   if (!input.reviewResult.ruleChecks.minSentencesOk) missingRequirements.push('writing_min_sentences')
 

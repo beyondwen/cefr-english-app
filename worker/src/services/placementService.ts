@@ -7,7 +7,8 @@ export const assessPlacement = (request: PlacementRequest): PlacementResult => {
 
   const weaknesses: Array<'reading' | 'grammar' | 'writing'> = []
   for (const answer of request.answers) {
-    if (answer.correct / answer.total < 0.6) weaknesses.push(answer.skill)
+    const ratio = answer.total > 0 ? answer.correct / answer.total : 0
+    if (ratio < 0.6) weaknesses.push(answer.skill)
   }
   if (request.writingWordCount < 50) weaknesses.push('writing')
 

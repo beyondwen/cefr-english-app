@@ -2,6 +2,20 @@ package com.wenha.cefrenglish.domain
 
 data class PlacementResult(val level: String, val weaknesses: List<String>)
 
+data class PlacementQuestion(
+    val prompt: String,
+    val options: List<String>,
+    val correctIndex: Int,
+)
+
+data class PlacementTest(
+    val readingPassage: String,
+    val readingQuestions: List<PlacementQuestion>,
+    val grammarQuestions: List<PlacementQuestion>,
+    val writingPrompt: String,
+    val minWritingWords: Int,
+)
+
 data class LessonQuestion(
     val questionId: String,
     val prompt: String,

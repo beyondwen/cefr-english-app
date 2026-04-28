@@ -19,9 +19,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wenha.cefrenglish.ui.common.AppBlue
 import com.wenha.cefrenglish.ui.common.AppMuted
 import com.wenha.cefrenglish.ui.common.ChipRow
+import com.wenha.cefrenglish.ui.common.ErrorNotice
 import com.wenha.cefrenglish.ui.common.HeroPanel
 import com.wenha.cefrenglish.ui.common.LearningPage
 import com.wenha.cefrenglish.ui.common.LessonProgress
+import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
@@ -61,6 +63,13 @@ fun ProgressScreen(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                if (state.isLoading) {
+                    LoadingNotice("正在加载学习进度...")
+                }
+                state.errorMessage?.let { message ->
+                    ErrorNotice(message = message, onRetry = { viewModel.refresh(userId) })
+                }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StatTile(
                         modifier = Modifier.weight(1f),
@@ -87,7 +96,8 @@ fun ProgressScreen(
                 }
 
                 PrimaryAction(
-                    text = "刷新进度",
+                    text = if (state.isLoading) "正在刷新..." else "刷新进度",
+                    enabled = !state.isLoading,
                     onClick = {
                         viewModel.refresh(userId)
                         onRefresh()

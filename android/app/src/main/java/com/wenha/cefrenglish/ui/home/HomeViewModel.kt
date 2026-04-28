@@ -20,9 +20,13 @@ data class HomeUiState(
     val recentWeaknesses: List<String> = emptyList(),
     val selectedSyllabus: CourseSyllabus? = null,
     val regeneratingLevel: String? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val hasLoaded: Boolean = false,
+    val lastUserId: String = "",
 ) {
     val shouldStartPlacement: Boolean
-        get() = currentLessonId == null && completedCount == 0
+        get() = hasLoaded && currentLessonId == null && completedCount == 0
 }
 
 class HomeViewModel(
@@ -35,6 +39,7 @@ class HomeViewModel(
     fun refresh(userId: String) {
         if (userId.isBlank()) return
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             runCatching { repository.fetchSummary(userId) }
                 .onSuccess { summary ->
                     _uiState.value = HomeUiState(
@@ -48,16 +53,35 @@ class HomeViewModel(
                         recentWeaknesses = summary.recentWeaknesses,
                         selectedSyllabus = _uiState.value.selectedSyllabus,
                         regeneratingLevel = _uiState.value.regeneratingLevel,
+                        isLoading = false,
+                        errorMessage = null,
+                        hasLoaded = true,
+                        lastUserId = userId,
+                    )
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "无法加载学习进度，请检查网络后重试。",
+                        hasLoaded = true,
+                        lastUserId = userId,
                     )
                 }
         }
+    }
+
+    fun retryRefresh() {
+        refresh(_uiState.value.lastUserId)
     }
 
     fun loadSyllabus(level: String) {
         viewModelScope.launch {
             runCatching { syllabusRepository.fetchSyllabus(level) }
                 .onSuccess { syllabus ->
-                    _uiState.value = _uiState.value.copy(selectedSyllabus = syllabus)
+                    _uiState.value = _uiState.value.copy(selectedSyllabus = syllabus, errorMessage = null)
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(errorMessage = "无法加载 $level 课程大纲，已显示本地备用大纲。")
                 }
         }
     }
