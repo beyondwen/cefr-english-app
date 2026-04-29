@@ -15,4 +15,32 @@ describe('assessPlacement', () => {
     expect(result.level).toBe('A2')
     expect(result.weaknesses).toEqual(['grammar'])
   })
+
+  it('can place strong learners above A2', () => {
+    const result = assessPlacement({
+      userId: 'u2',
+      answers: [
+        { skill: 'reading', correct: 9, total: 10 },
+        { skill: 'grammar', correct: 9, total: 10 },
+      ],
+      writingWordCount: 180,
+    })
+
+    expect(result.level).toBe('C1')
+    expect(result.weaknesses).toEqual([])
+  })
+
+  it('keeps short writing as a writing weakness even with decent answers', () => {
+    const result = assessPlacement({
+      userId: 'u3',
+      answers: [
+        { skill: 'reading', correct: 8, total: 10 },
+        { skill: 'grammar', correct: 8, total: 10 },
+      ],
+      writingWordCount: 35,
+    })
+
+    expect(result.level).toBe('B1')
+    expect(result.weaknesses).toEqual(['writing'])
+  })
 })

@@ -153,6 +153,8 @@ export type WritingRuleChecks = {
   notBlank: boolean
   minSentencesOk: boolean
   onTopicLikely: boolean
+  minWordsOk?: boolean
+  structureOk?: boolean
 }
 
 export type LessonSubmitResult = {

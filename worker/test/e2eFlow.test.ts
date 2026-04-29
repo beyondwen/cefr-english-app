@@ -12,10 +12,10 @@ describe('worker e2e flow', () => {
         body: JSON.stringify({
           userId: 'u1',
           answers: [
-            { skill: 'reading', correct: 4, total: 5 },
-            { skill: 'grammar', correct: 4, total: 5 },
+            { skill: 'reading', correct: 3, total: 5 },
+            { skill: 'grammar', correct: 3, total: 5 },
           ],
-          writingWordCount: 60,
+          writingWordCount: 70,
         }),
       }),
     )
@@ -58,10 +58,10 @@ describe('worker e2e flow', () => {
         body: JSON.stringify({
           userId: 'u1',
           answers: [
-            { skill: 'reading', correct: 4, total: 5 },
-            { skill: 'grammar', correct: 4, total: 5 },
+            { skill: 'reading', correct: 3, total: 5 },
+            { skill: 'grammar', correct: 3, total: 5 },
           ],
-          writingWordCount: 60,
+          writingWordCount: 70,
         }),
       }),
     )
@@ -82,7 +82,8 @@ describe('worker e2e flow', () => {
           prompt: lessonJson.writingPrompt,
           readingAnswers: ['wrong reading', 'hello', 'c', 'd'],
           grammarAnswers: ['am', 'wrong grammar', 'c', 'd'],
-          writingSubmission: 'I studied English today. I wrote two sentences.',
+          writingSubmission:
+            'I studied English today because I want to speak with more people. I wrote a short paragraph and checked my answers carefully. I will practice again tomorrow so I can remember the new words and use them in real conversations with my classmates. I also listened to a short dialogue after dinner and repeated the useful sentences several times. This habit helps me feel more confident when I answer questions in class.',
         }),
       }),
     )
@@ -117,10 +118,10 @@ describe('worker e2e flow', () => {
         body: JSON.stringify({
           userId: 'u1',
           answers: [
-            { skill: 'reading', correct: 4, total: 5 },
-            { skill: 'grammar', correct: 4, total: 5 },
+            { skill: 'reading', correct: 3, total: 5 },
+            { skill: 'grammar', correct: 3, total: 5 },
           ],
-          writingWordCount: 60,
+          writingWordCount: 70,
         }),
       }),
     )
@@ -141,7 +142,8 @@ describe('worker e2e flow', () => {
           prompt: lessonJson.writingPrompt,
           readingAnswers: ['daily life', 'hello', 'c', 'd'],
           grammarAnswers: ['am', 'I am a student.', 'c', 'd'],
-          writingSubmission: 'I wake up early. I walk to school.',
+          writingSubmission:
+            'I wake up early and I prepare my school bag before breakfast. I walk to school with my friend because the weather is usually nice. After class, I review new words and write two more sentences so I can improve my English every day.',
         }),
       }),
     )

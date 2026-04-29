@@ -418,6 +418,8 @@ private fun missingRequirementText(requirement: String): String =
         "grammar_incorrect" -> "语法题需要订正"
         "writing_blank" -> "写作不能为空"
         "writing_min_sentences" -> "写作至少需要两句"
+        "writing_min_words" -> "写作词数还不够"
+        "writing_structure" -> "写作需要更完整的段落结构"
         "writing_revision_required" -> "需要提交写作订正版"
         "lesson_not_found" -> "课程已失效，请重新加载"
         else -> requirement

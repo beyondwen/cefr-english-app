@@ -25,4 +25,17 @@ describe('reviewWriting', () => {
     expect(result.ruleChecks.minSentencesOk).toBe(false)
     expect(result.feedback.grammar).toContain('present simple')
   })
+
+  it('uses stricter word and sentence requirements for B1 writing', async () => {
+    const result = await reviewWriting({
+      level: 'B1',
+      prompt: 'Write your opinion about online learning.',
+      submission: 'Online learning is useful. It saves time. It is flexible.',
+      aiProvider: fakeProvider,
+    })
+
+    expect(result.ruleChecks.minSentencesOk).toBe(false)
+    expect(result.ruleChecks.minWordsOk).toBe(false)
+    expect(result.ruleChecks.structureOk).toBe(false)
+  })
 })

@@ -3,10 +3,13 @@ import { lessonTemplatesByLevel } from '../src/domain/lessonTemplates'
 import { getTodayLesson, regenerateTodayLesson } from '../src/services/todayLessonService'
 
 describe('lesson templates', () => {
-  it('contains a full A1 self-study path and at least 2 templates for A2/B1', () => {
+  it('contains guided templates for every CEFR level', () => {
     expect(lessonTemplatesByLevel.A1.length).toBeGreaterThanOrEqual(10)
-    expect(lessonTemplatesByLevel.A2.length).toBeGreaterThanOrEqual(2)
-    expect(lessonTemplatesByLevel.B1.length).toBeGreaterThanOrEqual(2)
+    expect(lessonTemplatesByLevel.A2.length).toBeGreaterThanOrEqual(10)
+    expect(lessonTemplatesByLevel.B1.length).toBeGreaterThanOrEqual(10)
+    expect(lessonTemplatesByLevel.B2.length).toBeGreaterThanOrEqual(2)
+    expect(lessonTemplatesByLevel.C1.length).toBeGreaterThanOrEqual(2)
+    expect(lessonTemplatesByLevel.C2.length).toBeGreaterThanOrEqual(2)
   })
 
   it('builds stable template ids and reading/grammar question counts', () => {

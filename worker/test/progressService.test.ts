@@ -191,6 +191,40 @@ describe('completeLesson', () => {
     expect(result.missingRequirements).toEqual(['writing_revision_required'])
   })
 
+  it('does not complete higher-level lessons when writing is below CEFR length requirements', async () => {
+    const result = await submitLesson({
+      userId: 'u1',
+      lessonInstanceId: 'u1:B1-01:v1',
+      readingAnswers: ['a', 'b', 'c', 'd'],
+      grammarAnswers: ['a', 'b', 'c', 'd'],
+      lessonRepo: {
+        findByInstanceId: async () => ({
+          templateId: 'B1-01',
+          level: 'B1',
+          writingPrompt: 'Write your opinion about learning online.',
+        }),
+        markCompleted: async () => undefined,
+      },
+      progressRepo: {
+        get: async () => ({
+          completedLessonIds: [],
+          level: 'B1',
+          currentTemplateId: 'B1-01',
+          currentLessonInstanceId: 'u1:B1-01:v1',
+          todayCompleted: false,
+          lastCompletedDate: null,
+        }),
+        upsert: async () => undefined,
+      },
+      reviewResult: {
+        ruleChecks: { notBlank: true, minSentencesOk: false, onTopicLikely: true, minWordsOk: false, structureOk: false },
+      },
+    })
+
+    expect(result.completed).toBe(false)
+    expect(result.missingRequirements).toEqual(['writing_min_sentences', 'writing_min_words', 'writing_structure'])
+  })
+
   it.each([
     ['omitted', undefined],
     ['null', null],

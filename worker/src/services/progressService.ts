@@ -113,7 +113,7 @@ export const submitLesson = async (input: {
     }): Promise<void>
   }
   reviewResult: {
-    ruleChecks: { notBlank: boolean; minSentencesOk: boolean; onTopicLikely: boolean }
+    ruleChecks: { notBlank: boolean; minSentencesOk: boolean; onTopicLikely: boolean; minWordsOk?: boolean; structureOk?: boolean }
   }
 }): Promise<LessonSubmitResult> => {
   const lesson = await input.lessonRepo.findByInstanceId(input.lessonInstanceId)
@@ -141,6 +141,8 @@ export const submitLesson = async (input: {
   if (answerFeedback.grammar.length > 0) missingRequirements.push('grammar_incorrect')
   if (!input.reviewResult.ruleChecks.notBlank) missingRequirements.push('writing_blank')
   if (!input.reviewResult.ruleChecks.minSentencesOk) missingRequirements.push('writing_min_sentences')
+  if (input.reviewResult.ruleChecks.minWordsOk === false) missingRequirements.push('writing_min_words')
+  if (input.reviewResult.ruleChecks.structureOk === false) missingRequirements.push('writing_structure')
   if (input.writingRevision != null && input.writingRevision.trim().length === 0) {
     missingRequirements.push('writing_revision_required')
   }
