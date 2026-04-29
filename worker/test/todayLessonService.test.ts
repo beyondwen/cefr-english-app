@@ -133,6 +133,8 @@ describe('today lesson service', () => {
     })
 
     expect(regenerated.generationVersion).toBe(2)
+    expect(regenerated.writingRubric[0]).toMatch(/^目标词数：\d+-\d+ 词。$/)
+    expect(regenerated.writingRubric.join(' ')).not.toContain('Use 2-4 clear sentences')
     expect(savedVersions).toEqual([2])
   })
 })

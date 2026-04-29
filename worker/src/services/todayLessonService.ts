@@ -18,6 +18,14 @@ const nextThemeRotationState = (current: UserProfile['themeRotationState']): Use
 
 const createLessonInstanceId = (userId: string, templateId: string, version: number): string => `${userId}:${templateId}:v${version}`
 
+const writingSentenceGuidance = (level: LessonTemplate['level']): string => {
+  if (level === 'A1') return '句子要求：至少 2 句，优先写清楚主语、动词和时间/地点。'
+  if (level === 'A2') return '句子要求：至少 3 句，加入原因、时间顺序或简单对比。'
+  if (level === 'B1') return '结构要求：至少 5 句，包含主题句、理由/例子和结尾句。'
+  if (level === 'B2') return '结构要求：至少 6 句，包含观点、例子、让步或总结。'
+  return '结构要求：使用完整段落，注意论点精准、语域一致和衔接自然。'
+}
+
 const isPlaceholderLesson = (lesson: LessonInstance): boolean =>
   lesson.readingText.startsWith('Sample reading for ') ||
   lesson.grammarExplanation.startsWith('Focus on ') ||
@@ -67,8 +75,9 @@ const buildLessonInstance = (input: {
   grammarQuestions: createLessonQuestions(input.generated.grammarQuestions, `${input.template.templateId}-grammar`),
   writingPrompt: input.generated.writingPrompt,
   writingRubric: [
-    `Write ${input.template.targetWordRange.min}-${input.template.targetWordRange.max} words if possible.`,
-    'Use 2-4 clear sentences.',
+    `目标词数：${input.template.targetWordRange.min}-${input.template.targetWordRange.max} 词。`,
+    writingSentenceGuidance(input.template.level),
+    '提交前检查：是否回应题目、使用本课句型，并修正明显语法错误。',
   ],
   status: 'generated',
   generationVersion: input.generationVersion,

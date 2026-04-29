@@ -178,7 +178,7 @@ fun LessonScreen(
                 SectionCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         StepBadge("10")
-                        SectionTitle("写作", "用一段简短回答完成练习。")
+                        SectionTitle("写作", "按本课评分标准完成一段英文表达。")
                     }
                     Text(state.writingPrompt.ifBlank { "正在加载写作题目..." }, color = AppMuted)
                     OutlinedTextField(
@@ -187,6 +187,11 @@ fun LessonScreen(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("你的写作") },
                         minLines = 5,
+                    )
+                    Text(
+                        text = "当前词数：${state.writingSubmission.wordCount()}",
+                        color = AppMuted,
+                        style = MaterialTheme.typography.labelMedium,
                     )
                     ChipRow(state.writingRubric, emptyText = "正在加载评分标准")
                 }
@@ -257,7 +262,11 @@ fun LessonScreen(
                     )
                 }
                 PrimaryAction(
-                    text = if (state.isSubmitting) "正在提交..." else "提交课程",
+                    text = when {
+                        state.isSubmitting -> "正在提交..."
+                        state.submissionResult?.revisionRequired == true -> "提交订正版"
+                        else -> "提交课程"
+                    },
                     enabled = canSubmit,
                     onClick = { viewModel.submitLesson(userId) },
                 )
@@ -424,3 +433,6 @@ private fun missingRequirementText(requirement: String): String =
         "lesson_not_found" -> "课程已失效，请重新加载"
         else -> requirement
     }
+
+private fun String.wordCount(): Int =
+    trim().split(Regex("\\s+")).count { it.isNotBlank() }
