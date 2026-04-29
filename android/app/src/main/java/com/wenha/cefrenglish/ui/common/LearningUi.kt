@@ -250,7 +250,7 @@ fun LessonProgress(progress: Float, label: String) {
                 .fillMaxWidth()
                 .height(8.dp)
                 .clip(PillShape),
-            progress = progress.coerceIn(0f, 1f),
+            progress = { progress.coerceIn(0f, 1f) },
             color = AppGreen,
             trackColor = Color(0xFFE4EAF2),
         )
