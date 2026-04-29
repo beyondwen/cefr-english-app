@@ -8,10 +8,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
@@ -38,20 +43,17 @@ import com.wenha.cefrenglish.domain.SyllabusModule
 import com.wenha.cefrenglish.ui.common.AppBlue
 import com.wenha.cefrenglish.ui.common.AppGreen
 import com.wenha.cefrenglish.ui.common.AppInk
-import com.wenha.cefrenglish.ui.common.AppLine
 import com.wenha.cefrenglish.ui.common.AppMuted
+import com.wenha.cefrenglish.ui.common.AppYellow
 import com.wenha.cefrenglish.ui.common.ChipRow
 import com.wenha.cefrenglish.ui.common.ErrorNotice
 import com.wenha.cefrenglish.ui.common.HeroPanel
 import com.wenha.cefrenglish.ui.common.LearningPage
-import com.wenha.cefrenglish.ui.common.LessonProgress
 import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.Pill
-import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
-import com.wenha.cefrenglish.ui.common.StatTile
 
 @Composable
 fun HomeScreen(
@@ -65,7 +67,6 @@ fun HomeScreen(
     var selectedLevel by remember(currentLevel) { mutableStateOf(currentLevel.takeIf { it in cefrLevels } ?: "A1") }
     val syllabus = state.selectedSyllabus?.takeIf { it.level == selectedLevel }
         ?: fallbackSyllabuses.first { it.level == selectedLevel }
-    val progress = state.progressRatio
 
     LearningPage {
         LaunchedEffect(selectedLevel) {
@@ -86,7 +87,15 @@ fun HomeScreen(
                         onLevelSelected = { selectedLevel = it },
                     )
                 },
-                trailing = { Pill("已完成 ${state.completedCount}") },
+                trailing = { Pill("已完成 ${state.completedCount}/${state.totalLessonCount.coerceAtLeast(10)}") },
+                footerContent = {
+                    HeroLearningSummary(
+                        nextLessonId = state.nextLessonId ?: state.currentLessonId ?: "A1-01",
+                        todayCompleted = state.todayCompleted,
+                        onContinueLearning = onContinueLearning,
+                        onStartPlacement = onStartPlacement,
+                    )
+                },
             )
 
             Column(
@@ -100,78 +109,20 @@ fun HomeScreen(
                     ErrorNotice(message = message, onRetry = { viewModel.retryRefresh() })
                 }
 
-                SectionCard {
-                    SectionTitle(
-                        title = if (state.completedCount == 0) "从 A1 第一课开始" else "继续学习",
-                        subtitle = if (state.todayCompleted) "今天课程已完成，明天继续下一课。" else "按固定顺序推进，不需要先定级。",
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        StatTile(
-                            modifier = Modifier.weight(1f),
-                            label = "已完成",
-                            value = "${state.completedCount}/${state.totalLessonCount.coerceAtLeast(10)}",
-                        )
-                        StatTile(
-                            modifier = Modifier.weight(1f),
-                            label = "下一课",
-                            value = state.nextLessonId ?: state.currentLessonId ?: "A1-01",
-                        )
-                    }
-                    PrimaryAction(
-                        text = if (state.todayCompleted) "查看今日课程" else "继续学习",
-                        onClick = onContinueLearning,
-                    )
-                    SecondaryAction(
-                        text = "AI 定级（可选）",
-                        onClick = onStartPlacement,
-                    )
-                }
+                SyllabusToolbar(
+                    syllabus = syllabus,
+                    regenerating = state.regeneratingLevel == selectedLevel,
+                    onRegenerate = { viewModel.regenerateSyllabus(selectedLevel) },
+                )
 
-                SectionCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            SectionTitle(
-                                title = syllabus.title,
-                                subtitle = syllabus.description,
-                            )
-                            PrimaryAction(
-                                text = if (state.regeneratingLevel == selectedLevel) "正在生成大纲..." else "重新生成大纲",
-                                enabled = state.regeneratingLevel == null,
-                                onClick = { viewModel.regenerateSyllabus(selectedLevel) },
-                            )
-                        }
-                        Pill(syllabus.level, color = Color(0xFFEAF3FF), contentColor = AppBlue)
-                    }
-                    LessonProgress(progress = progress, label = "当前学习进度")
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatTile(
-                        modifier = Modifier.weight(1f),
-                        label = "当前等级",
-                        value = currentLevel,
-                    )
-                    StatTile(
-                        modifier = Modifier.weight(1f),
-                        label = "查看等级",
-                        value = selectedLevel,
-                    )
-                }
-
-                syllabus.modules.forEachIndexed { index, module ->
-                    SyllabusModuleCard(
-                        index = index + 1,
-                        module = module,
-                        onStart = { onStartModule(selectedLevel, index) },
-                    )
-                }
+                CoursePath(
+                    items = buildCoursePathItems(
+                        syllabus = syllabus,
+                        currentLevel = currentLevel,
+                        currentLessonId = state.currentLessonId,
+                    ),
+                    onStart = { index -> onStartModule(selectedLevel, index) },
+                )
 
                 SectionCard {
                     SectionTitle("薄弱项", "选择章节学习后，练习反馈会继续帮助你发现薄弱项。")
@@ -223,6 +174,110 @@ private fun buildReviewMeta(item: ReviewItem): String {
     val status = if (item.status == "completed") "已完成" else "待复习"
     val due = item.dueDate?.let { " · 到期 $it" } ?: ""
     return "$status$due · 掌握度 ${item.masteryScore}/3"
+}
+
+@Composable
+private fun HeroLearningSummary(
+    nextLessonId: String,
+    todayCompleted: Boolean,
+    onContinueLearning: () -> Unit,
+    onStartPlacement: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = if (todayCompleted) "今日已完成" else "下一课",
+                    color = Color.White.copy(alpha = 0.72f),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = nextLessonId,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Text(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.White.copy(alpha = 0.16f))
+                    .clickable(onClick = onStartPlacement)
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                text = "AI 定级",
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Text(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White)
+                .clickable(onClick = onContinueLearning)
+                .padding(vertical = 14.dp),
+            text = if (todayCompleted) "查看今日课程" else "继续学习",
+            color = AppBlue,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun SyllabusToolbar(
+    syllabus: CourseSyllabus,
+    regenerating: Boolean,
+    onRegenerate: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White)
+            .border(1.dp, Color(0xFFE6ECF5), RoundedCornerShape(8.dp))
+            .padding(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = syllabus.title,
+                    color = AppInk,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Pill(syllabus.level, color = Color(0xFFEAF3FF), contentColor = AppBlue)
+            }
+            Text(
+                text = syllabus.description,
+                color = AppMuted,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Text(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFEAF3FF))
+                .clickable(enabled = !regenerating, onClick = onRegenerate)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            text = if (regenerating) "生成中" else "重生成",
+            color = AppBlue,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+        )
+    }
 }
 
 @Composable
@@ -302,36 +357,413 @@ private fun LevelDropdownPill(
 }
 
 @Composable
-private fun SyllabusModuleCard(index: Int, module: SyllabusModule, onStart: () -> Unit) {
-    SectionCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Text(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (index == 1) AppBlue else Color(0xFFEAF3FF))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                text = index.toString().padStart(2, '0'),
-                color = if (index == 1) Color.White else AppBlue,
-                fontWeight = FontWeight.Bold,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(module.title, color = AppInk, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(module.goal, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
-                module.lessons.forEach { lesson ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                        Text("•", color = AppGreen, fontWeight = FontWeight.Bold)
-                        Text(lesson, color = AppInk, style = MaterialTheme.typography.bodyMedium)
-                    }
+private fun CoursePath(items: List<CoursePathItem>, onStart: (moduleIndex: Int) -> Unit) {
+    val totalLessonCount = items.sumOf { it.lessons.size }.coerceAtLeast(1)
+    val finishedLessonCount = items.sumOf { item ->
+        item.lessons.count { it.status == CoursePathStatus.Completed }
+    }
+    val progress = finishedLessonCount / totalLessonCount.toFloat()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = "第 1 章",
+                        color = AppInk,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "已完成 $finishedLessonCount/$totalLessonCount 的课程",
+                        color = AppMuted,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
+                Text(
+                    text = "大纲",
+                    color = AppBlue,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(999.dp)),
+                progress = { progress.coerceIn(0f, 1f) },
+                color = AppGreen,
+                trackColor = Color(0xFFDDE5F0),
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            items.forEachIndexed { index, item ->
+                CourseChapterPath(
+                    item = item,
+                    isFirst = index == 0,
+                    isLast = index == items.lastIndex,
+                    onStart = { onStart(item.index - 1) },
+                )
             }
         }
-        PrimaryAction("学习本章节", onClick = onStart)
     }
 }
+
+@Composable
+private fun CourseChapterPath(
+    item: CoursePathItem,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onStart: () -> Unit,
+) {
+    val rows = item.lessons
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        rows.forEachIndexed { lessonIndex, lesson ->
+            CourseLessonPathRow(
+                lesson = lesson,
+                showTopLine = !isFirst || lessonIndex > 0,
+                showBottomLine = true,
+                onStart = onStart,
+            )
+        }
+        CourseCheckpointPathRow(
+            item = item,
+            showTopLine = rows.isNotEmpty(),
+            showBottomLine = !isLast,
+            onStart = onStart,
+        )
+    }
+}
+
+@Composable
+private fun CourseLessonPathRow(
+    lesson: CoursePathLessonItem,
+    showTopLine: Boolean,
+    showBottomLine: Boolean,
+    onStart: () -> Unit,
+) {
+    val colors = lessonPathColors(lesson.status)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        CoursePathRail(
+            label = lessonNodeText(lesson),
+            colors = colors,
+            showTopLine = showTopLine,
+            showBottomLine = showBottomLine,
+        )
+        CourseLessonPathContent(
+            lesson = lesson,
+            colors = colors,
+            onStart = onStart,
+        )
+    }
+}
+
+@Composable
+private fun CourseCheckpointPathRow(
+    item: CoursePathItem,
+    showTopLine: Boolean,
+    showBottomLine: Boolean,
+    onStart: () -> Unit,
+) {
+    val colors = checkpointPathColors(item.status)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        CoursePathRail(
+            label = checkpointNodeText(item.status),
+            colors = colors,
+            showTopLine = showTopLine,
+            showBottomLine = showBottomLine,
+        )
+        CourseCheckpointContent(
+            item = item,
+            colors = colors,
+            onStart = onStart,
+        )
+    }
+}
+
+@Composable
+private fun CoursePathRail(
+    label: String,
+    colors: PathNodeColors,
+    showTopLine: Boolean,
+    showBottomLine: Boolean,
+) {
+    Box(
+        modifier = Modifier.size(width = 72.dp, height = 100.dp),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        if (showTopLine) {
+            Box(
+                modifier = Modifier
+                    .size(width = 4.dp, height = 24.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.line),
+            )
+        }
+        if (showBottomLine) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 60.dp)
+                    .size(width = 4.dp, height = 40.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.nextLine),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .padding(top = 18.dp)
+                .size(58.dp)
+                .clip(CircleShape)
+                .background(colors.outer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(colors.inner)
+                    .border(2.dp, colors.stroke, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = label,
+                    color = colors.nodeText,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseLessonPathContent(
+    lesson: CoursePathLessonItem,
+    colors: PathNodeColors,
+    onStart: () -> Unit,
+) {
+    val enabled = lesson.status != CoursePathStatus.Locked
+    val shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 12.dp)
+            .clip(shape)
+            .background(colors.card)
+            .clickable(enabled = enabled) { onStart() }
+            .padding(horizontal = 18.dp, vertical = if (lesson.status == CoursePathStatus.Current) 18.dp else 10.dp),
+    ) {
+        Text(
+            text = lesson.title,
+            color = colors.title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun CourseCheckpointContent(
+    item: CoursePathItem,
+    colors: PathNodeColors,
+    onStart: () -> Unit,
+) {
+    val enabled = item.status != CoursePathStatus.Locked
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 14.dp, bottom = 14.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(colors.card)
+            .clickable(enabled = enabled) { onStart() }
+            .padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "Checkpoint",
+                    color = colors.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = item.module.title,
+                    color = colors.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = item.module.goal,
+                    color = colors.body,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Text(
+                modifier = Modifier.padding(start = 10.dp, top = 2.dp),
+                text = coursePathStatusText(item.status),
+                color = colors.badgeText,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+private data class PathNodeColors(
+    val outer: Color,
+    val inner: Color,
+    val stroke: Color,
+    val nodeText: Color,
+    val line: Color,
+    val nextLine: Color,
+    val card: Color,
+    val title: Color,
+    val body: Color,
+    val badgeText: Color,
+)
+
+private fun lessonPathColors(status: CoursePathStatus): PathNodeColors =
+    when (status) {
+        CoursePathStatus.Completed -> PathNodeColors(
+            outer = Color(0xFFE7ECF3),
+            inner = Color.White,
+            stroke = Color(0xFFD5DDE8),
+            nodeText = AppGreen,
+            line = AppGreen,
+            nextLine = AppGreen,
+            card = Color.Transparent,
+            title = AppInk,
+            body = AppMuted,
+            badgeText = AppGreen,
+        )
+        CoursePathStatus.Current -> PathNodeColors(
+            outer = Color(0xFFE7ECF3),
+            inner = Color.White,
+            stroke = Color(0xFFD5DDE8),
+            nodeText = AppBlue,
+            line = AppGreen,
+            nextLine = Color(0xFFDDE5F0),
+            card = Color(0xFFF0F6FF),
+            title = AppInk,
+            body = AppMuted,
+            badgeText = AppBlue,
+        )
+        CoursePathStatus.Available -> PathNodeColors(
+            outer = Color(0xFFE7ECF3),
+            inner = Color.White,
+            stroke = Color(0xFFD5DDE8),
+            nodeText = AppBlue,
+            line = Color(0xFFDDE5F0),
+            nextLine = Color(0xFFDDE5F0),
+            card = Color.Transparent,
+            title = AppInk,
+            body = AppMuted,
+            badgeText = AppBlue,
+        )
+        CoursePathStatus.Locked -> PathNodeColors(
+            outer = Color(0xFFE7ECF3),
+            inner = Color(0xFFF7F9FC),
+            stroke = Color(0xFFD5DDE8),
+            nodeText = AppMuted,
+            line = Color(0xFFDDE5F0),
+            nextLine = Color(0xFFDDE5F0),
+            card = Color.Transparent,
+            title = AppMuted,
+            body = AppMuted,
+            badgeText = AppMuted,
+        )
+    }
+
+private fun checkpointPathColors(status: CoursePathStatus): PathNodeColors =
+    when (status) {
+        CoursePathStatus.Completed -> PathNodeColors(
+            outer = Color(0xFFDDF7E7),
+            inner = AppGreen,
+            stroke = Color.White,
+            nodeText = Color.White,
+            line = AppGreen,
+            nextLine = AppGreen,
+            card = Color.White,
+            title = AppInk,
+            body = AppMuted,
+            badgeText = AppGreen,
+        )
+        CoursePathStatus.Current,
+        CoursePathStatus.Available -> PathNodeColors(
+            outer = Color(0xFFFFE9A8),
+            inner = AppYellow,
+            stroke = Color.White,
+            nodeText = AppInk,
+            line = Color(0xFFDDE5F0),
+            nextLine = Color(0xFFDDE5F0),
+            card = Color(0xFFFFF4CF),
+            title = AppInk,
+            body = Color(0xFF7A5A13),
+            badgeText = Color(0xFF9A6700),
+        )
+        CoursePathStatus.Locked -> PathNodeColors(
+            outer = Color(0xFFE7ECF3),
+            inner = Color(0xFFF7F9FC),
+            stroke = Color(0xFFD5DDE8),
+            nodeText = AppMuted,
+            line = Color(0xFFDDE5F0),
+            nextLine = Color(0xFFDDE5F0),
+            card = Color.White,
+            title = AppMuted,
+            body = AppMuted,
+            badgeText = AppMuted,
+        )
+    }
+
+private fun lessonNodeText(lesson: CoursePathLessonItem): String =
+    when (lesson.status) {
+        CoursePathStatus.Completed -> "✓"
+        CoursePathStatus.Locked -> "锁"
+        else -> lesson.index.toString()
+    }
+
+private fun checkpointNodeText(status: CoursePathStatus): String =
+    when (status) {
+        CoursePathStatus.Completed -> "✓"
+        CoursePathStatus.Locked -> "锁"
+        else -> "旗"
+    }
+
+private fun coursePathStatusText(status: CoursePathStatus): String =
+    when (status) {
+        CoursePathStatus.Completed -> "已完成"
+        CoursePathStatus.Current -> "当前"
+        CoursePathStatus.Available -> "检查站"
+        CoursePathStatus.Locked -> "未解锁"
+    }
 
 private val cefrLevels = listOf("A1", "A2", "B1", "B2", "C1", "C2")
 

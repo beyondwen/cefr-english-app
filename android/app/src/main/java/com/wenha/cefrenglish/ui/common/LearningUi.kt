@@ -83,6 +83,7 @@ fun HeroPanel(
     modifier: Modifier = Modifier,
     badgeContent: @Composable (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
+    footerContent: @Composable (ColumnScope.() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -94,7 +95,8 @@ fun HeroPanel(
                 ),
             )
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 28.dp, bottom = 16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -121,6 +123,10 @@ fun HeroPanel(
             color = Color.White.copy(alpha = 0.86f),
             style = MaterialTheme.typography.bodyMedium,
         )
+        if (footerContent != null) {
+            Spacer(Modifier.height(14.dp))
+            footerContent()
+        }
     }
 }
 
