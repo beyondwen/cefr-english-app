@@ -4,7 +4,9 @@ import com.wenha.cefrenglish.data.SyllabusRepository
 import com.wenha.cefrenglish.domain.CourseSyllabus
 import com.wenha.cefrenglish.domain.SyllabusModule
 
-class FakeSyllabusRepository : SyllabusRepository {
+class FakeSyllabusRepository(
+    private val regenerateError: Throwable? = null,
+) : SyllabusRepository {
     override suspend fun fetchSyllabus(level: String): CourseSyllabus =
         CourseSyllabus(
             level = level,
@@ -13,5 +15,8 @@ class FakeSyllabusRepository : SyllabusRepository {
             modules = listOf(SyllabusModule("Module 1", "Goal", listOf("Lesson 1"))),
         )
 
-    override suspend fun regenerateSyllabus(level: String): CourseSyllabus = fetchSyllabus(level)
+    override suspend fun regenerateSyllabus(level: String): CourseSyllabus {
+        regenerateError?.let { throw it }
+        return fetchSyllabus(level)
+    }
 }

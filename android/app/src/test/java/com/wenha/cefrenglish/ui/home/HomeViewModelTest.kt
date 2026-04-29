@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class HomeViewModelTest {
@@ -25,6 +26,25 @@ class HomeViewModelTest {
             assertEquals("A2-01", viewModel.uiState.value.currentLessonId)
             assertEquals(listOf("grammar"), viewModel.uiState.value.recentWeaknesses)
             assertEquals(0.5f, viewModel.uiState.value.progressRatio)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun regenerateSyllabus_whenRequestFails_showsErrorAndStopsLoading() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val viewModel = HomeViewModel(
+                FakeHomeRepository(),
+                FakeSyllabusRepository(regenerateError = IllegalStateException("Unauthorized")),
+            )
+
+            viewModel.regenerateSyllabus("A1")
+
+            assertNull(viewModel.uiState.value.regeneratingLevel)
+            assertEquals("无法重新生成 A1 课程大纲，请检查网络或稍后重试。", viewModel.uiState.value.errorMessage)
         } finally {
             Dispatchers.resetMain()
         }

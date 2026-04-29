@@ -109,7 +109,10 @@ class HomeViewModel(
                     )
                 }
                 .onFailure {
-                    _uiState.value = _uiState.value.copy(regeneratingLevel = null)
+                    _uiState.value = _uiState.value.copy(
+                        regeneratingLevel = null,
+                        errorMessage = "无法重新生成 $level 课程大纲，请检查网络或稍后重试。",
+                    )
                 }
         }
     }
