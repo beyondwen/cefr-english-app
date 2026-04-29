@@ -24,6 +24,7 @@ interface LessonRepository {
         readingAnswers: List<String>,
         grammarAnswers: List<String>,
         writingSubmission: String,
+        writingRevision: String,
     ): LessonSubmissionResult
 }
 
@@ -51,6 +52,7 @@ class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
         readingAnswers: List<String>,
         grammarAnswers: List<String>,
         writingSubmission: String,
+        writingRevision: String,
     ): LessonSubmissionResult {
         val response = api.submitLesson(
             LessonSubmitRequestDto(
@@ -61,6 +63,7 @@ class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
                 readingAnswers = readingAnswers,
                 grammarAnswers = grammarAnswers,
                 writingSubmission = writingSubmission,
+                writingRevision = writingRevision,
             ),
         )
         return LessonSubmissionResult(
@@ -74,6 +77,7 @@ class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
                 minSentencesOk = response.ruleChecks.minSentencesOk,
                 onTopicLikely = response.ruleChecks.onTopicLikely,
             ),
+            revisionRequired = response.revisionRequired,
             feedback = WritingReview(
                 grammar = response.feedback.grammar,
                 vocabulary = response.feedback.vocabulary,

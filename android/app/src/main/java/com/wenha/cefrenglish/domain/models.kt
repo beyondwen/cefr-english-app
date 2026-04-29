@@ -104,6 +104,7 @@ data class LessonSubmissionResult(
     val todayCompleted: Boolean,
     val missingRequirements: List<String>,
     val ruleChecks: WritingRuleChecks,
+    val revisionRequired: Boolean,
     val feedback: WritingReview,
 )
 

@@ -151,4 +151,5 @@ export type LessonSubmitResult = {
   todayCompleted: boolean
   missingRequirements: string[]
   ruleChecks: WritingRuleChecks
+  revisionRequired: boolean
 }

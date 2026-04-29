@@ -16,6 +16,7 @@ export const handleLessonSubmit = async (request: Request, env: Env): Promise<Re
     readingAnswers: string[]
     grammarAnswers: string[]
     writingSubmission: string
+    writingRevision?: string
   }
   if (
     !payload.userId ||
@@ -49,6 +50,7 @@ export const handleLessonSubmit = async (request: Request, env: Env): Promise<Re
     lessonInstanceId: payload.lessonInstanceId,
     readingAnswers: payload.readingAnswers,
     grammarAnswers: payload.grammarAnswers,
+    writingRevision: payload.writingRevision,
     lessonRepo: createLessonRepository(env.DB),
     progressRepo: createProgressRepository(env.DB),
     reviewResult,

@@ -35,6 +35,7 @@ data class LessonUiState(
     val readingAnswers: List<String> = emptyList(),
     val grammarAnswers: List<String> = emptyList(),
     val writingSubmission: String = "",
+    val writingRevision: String = "",
     val feedback: WritingReview? = null,
     val submissionResult: LessonSubmissionResult? = null,
     val completed: Boolean = false,
@@ -120,6 +121,10 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
         _uiState.value = _uiState.value.copy(writingSubmission = value)
     }
 
+    fun updateWritingRevision(value: String) {
+        _uiState.value = _uiState.value.copy(writingRevision = value)
+    }
+
     fun regenerate(userId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
@@ -150,6 +155,7 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
                     readingAnswers = lesson.readingAnswers,
                     grammarAnswers = lesson.grammarAnswers,
                     writingSubmission = lesson.writingSubmission,
+                    writingRevision = lesson.writingRevision,
                 )
             }.onSuccess { result ->
                 _uiState.value = _uiState.value.copy(

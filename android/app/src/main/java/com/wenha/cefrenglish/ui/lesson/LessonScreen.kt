@@ -66,6 +66,7 @@ fun LessonScreen(
         state.readingAnswers.all { it.isNotBlank() } &&
         state.grammarAnswers.all { it.isNotBlank() } &&
         state.writingSubmission.isNotBlank() &&
+        (state.submissionResult?.revisionRequired != true || state.writingRevision.isNotBlank()) &&
         !state.isSubmitting &&
         !state.isLoading
 
@@ -213,6 +214,22 @@ fun LessonScreen(
                         if (it.suggestions.isNotEmpty()) {
                             ChipRow(it.suggestions, emptyText = "暂无建议")
                         }
+                    }
+                }
+
+                if (state.submissionResult?.revisionRequired == true) {
+                    SectionCard {
+                        SectionTitle("订正写作", "根据反馈重写一次，完成订正后再进入下一课。")
+                        state.feedback?.rewrite?.takeIf { it.isNotBlank() }?.let { rewrite ->
+                            Text("参考改写：$rewrite", color = AppMuted)
+                        }
+                        OutlinedTextField(
+                            value = state.writingRevision,
+                            onValueChange = { viewModel.updateWritingRevision(it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("你的订正版") },
+                            minLines = 5,
+                        )
                     }
                 }
 

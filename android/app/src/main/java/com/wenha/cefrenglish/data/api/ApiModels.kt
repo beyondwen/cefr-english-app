@@ -143,6 +143,7 @@ data class LessonSubmitRequestDto(
     val readingAnswers: List<String>,
     val grammarAnswers: List<String>,
     val writingSubmission: String,
+    val writingRevision: String,
 )
 
 data class LessonSubmitResultDto(
@@ -152,6 +153,7 @@ data class LessonSubmitResultDto(
     val todayCompleted: Boolean,
     val missingRequirements: List<String>,
     val ruleChecks: WritingRuleChecksDto,
+    val revisionRequired: Boolean = false,
     val feedback: WritingFeedbackDto,
 )
 

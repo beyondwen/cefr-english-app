@@ -59,6 +59,7 @@ export const submitLesson = async (input: {
   lessonInstanceId: string
   readingAnswers: string[]
   grammarAnswers: string[]
+  writingRevision?: string
   lessonRepo: {
     findByInstanceId(lessonInstanceId: string): Promise<{ templateId: string; level: CefrLevel; writingPrompt: string } | null>
     markCompleted(lessonInstanceId: string, completedAt: string): Promise<void>
@@ -96,6 +97,7 @@ export const submitLesson = async (input: {
       todayCompleted: false,
       missingRequirements: ['lesson_not_found'],
       ruleChecks: input.reviewResult.ruleChecks,
+      revisionRequired: false,
     }
   }
 
@@ -105,6 +107,9 @@ export const submitLesson = async (input: {
   if (!allAnswered(input.grammarAnswers, template?.questionCounts.grammar ?? 0)) missingRequirements.push('grammar_incomplete')
   if (!input.reviewResult.ruleChecks.notBlank) missingRequirements.push('writing_blank')
   if (!input.reviewResult.ruleChecks.minSentencesOk) missingRequirements.push('writing_min_sentences')
+  if (input.writingRevision !== undefined && input.writingRevision.trim().length === 0) {
+    missingRequirements.push('writing_revision_required')
+  }
 
   if (missingRequirements.length > 0) {
     return {
@@ -114,6 +119,7 @@ export const submitLesson = async (input: {
       todayCompleted: false,
       missingRequirements,
       ruleChecks: input.reviewResult.ruleChecks,
+      revisionRequired: missingRequirements.includes('writing_revision_required'),
     }
   }
 
@@ -132,5 +138,6 @@ export const submitLesson = async (input: {
     todayCompleted: true,
     missingRequirements: [],
     ruleChecks: input.reviewResult.ruleChecks,
+    revisionRequired: false,
   }
 }
