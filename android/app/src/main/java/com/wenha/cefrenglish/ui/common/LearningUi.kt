@@ -1,5 +1,8 @@
 package com.wenha.cefrenglish.ui.common
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.ScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -30,13 +34,18 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import com.wenha.cefrenglish.domain.ReviewItem
 
 val AppBlue = Color(0xFF0057D9)
@@ -48,6 +57,7 @@ val AppBg = Color(0xFFF5F8FC)
 val AppGreen = Color(0xFF16A34A)
 val AppYellow = Color(0xFFFFC857)
 val AppRed = Color(0xFFDC2626)
+val AppHeroStatusBar = Color(0xFF0047C7)
 
 private val CardShape = RoundedCornerShape(8.dp)
 private val PillShape = RoundedCornerShape(999.dp)
@@ -74,6 +84,34 @@ fun LearningPage(content: @Composable () -> Unit) {
         color = AppBg,
         content = content,
     )
+}
+
+@Composable
+fun SyncStatusBarWithHero(scrollState: ScrollState) {
+    val switchOffsetPx = with(LocalDensity.current) { 80.dp.roundToPx() }
+    val overHero = scrollState.value < switchOffsetPx
+    StatusBarColors(
+        color = if (overHero) AppHeroStatusBar else AppBg,
+        darkIcons = !overHero,
+    )
+}
+
+@Composable
+private fun StatusBarColors(color: Color, darkIcons: Boolean) {
+    val view = LocalView.current
+    val window = view.context.findActivity()?.window
+    if (window != null && !view.isInEditMode) {
+        SideEffect {
+            window.statusBarColor = color.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkIcons
+        }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Composable

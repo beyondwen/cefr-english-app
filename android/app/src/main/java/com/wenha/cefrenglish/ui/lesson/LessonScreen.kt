@@ -40,6 +40,7 @@ import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
 import com.wenha.cefrenglish.ui.common.StepBadge
+import com.wenha.cefrenglish.ui.common.SyncStatusBarWithHero
 
 @Composable
 fun LessonScreen(
@@ -72,10 +73,12 @@ fun LessonScreen(
         !state.isLoading
 
     LearningPage {
+        val scrollState = rememberScrollState()
+        SyncStatusBarWithHero(scrollState)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
         ) {
             HeroPanel(
                 title = state.theme.ifBlank { state.templateId.ifBlank { "正在加载课程" } },

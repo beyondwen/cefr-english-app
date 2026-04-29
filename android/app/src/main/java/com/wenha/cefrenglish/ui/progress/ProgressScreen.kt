@@ -29,6 +29,7 @@ import com.wenha.cefrenglish.ui.common.ReviewTaskList
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
 import com.wenha.cefrenglish.ui.common.StatTile
+import com.wenha.cefrenglish.ui.common.SyncStatusBarWithHero
 
 @Composable
 fun ProgressScreen(
@@ -46,10 +47,12 @@ fun ProgressScreen(
     val progress = state.progressRatio
 
     LearningPage {
+        val scrollState = rememberScrollState()
+        SyncStatusBarWithHero(scrollState)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
         ) {
             HeroPanel(
                 title = "学习进度",

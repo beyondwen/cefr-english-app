@@ -30,6 +30,7 @@ import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
+import com.wenha.cefrenglish.ui.common.SyncStatusBarWithHero
 import com.wenha.cefrenglish.domain.PlacementQuestion
 
 @Composable
@@ -52,10 +53,12 @@ fun PlacementScreen(
     val canSubmit = test != null && allQuestionsAnswered && writingWordCount >= test.minWritingWords && !state.isSubmitting
 
     LearningPage {
+        val scrollState = rememberScrollState()
+        SyncStatusBarWithHero(scrollState)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
         )
         {
             HeroPanel(

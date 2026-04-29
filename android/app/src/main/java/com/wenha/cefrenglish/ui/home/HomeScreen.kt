@@ -54,6 +54,7 @@ import com.wenha.cefrenglish.ui.common.ReviewTaskList
 import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
+import com.wenha.cefrenglish.ui.common.SyncStatusBarWithHero
 
 @Composable
 fun HomeScreen(
@@ -69,13 +70,15 @@ fun HomeScreen(
         ?: fallbackSyllabuses.first { it.level == selectedLevel }
 
     LearningPage {
+        val scrollState = rememberScrollState()
+        SyncStatusBarWithHero(scrollState)
         LaunchedEffect(selectedLevel) {
             viewModel.loadSyllabus(selectedLevel)
         }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
         ) {
             HeroPanel(
                 title = "课程大纲",
