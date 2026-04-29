@@ -2,7 +2,7 @@ import { handleHealth } from './routes/health'
 import { handleLessonSubmit } from './routes/lessonSubmit'
 import { handleNextLesson, handleRegenerateTodayLesson, handleSyllabusModuleLesson, handleTodayLesson } from './routes/lessons'
 import { handlePlacement, handlePlacementTest } from './routes/placement'
-import { handleCompleteLesson, handleSummary } from './routes/progress'
+import { handleCompleteLesson, handleCompleteReview, handleSummary } from './routes/progress'
 import { handleRegenerateSyllabus, handleSyllabus } from './routes/syllabus'
 import { handleWritingReview } from './routes/writing'
 import type { Env } from './env'
@@ -27,6 +27,7 @@ export const createApp = (env: Env) => ({
       if (url.pathname === '/api/lessons/next' && request.method === 'POST') return handleNextLesson(request, env)
       if (url.pathname === '/api/writing/review' && request.method === 'POST') return handleWritingReview(request, env)
       if (url.pathname === '/api/progress/complete' && request.method === 'POST') return handleCompleteLesson(request, env)
+      if (url.pathname === '/api/review/complete' && request.method === 'POST') return handleCompleteReview(request, env)
       if (url.pathname === '/api/me/summary' && request.method === 'GET') return handleSummary(request, env)
       return new Response('Not Found', { status: 404 })
     } catch (error) {

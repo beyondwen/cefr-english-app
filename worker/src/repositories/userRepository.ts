@@ -54,6 +54,12 @@ export const createUserRepository = (db: D1Database) => ({
       currentTemplateId: null,
     }
   },
+  async mergeWeaknesses(userId: string, weaknesses: Weakness[]): Promise<void> {
+    if (weaknesses.length === 0) return
+    const existing = await this.getOrCreate(userId)
+    const merged = [...new Set([...existing.recentWeaknesses, ...weaknesses])]
+    await this.upsert(userId, existing.currentLevel, merged, existing.currentTemplateId)
+  },
   async updateCurrentTemplate(userId: string, templateId: string, themeRotationState: UserProfile['themeRotationState']): Promise<void> {
     const now = new Date().toISOString()
     await db

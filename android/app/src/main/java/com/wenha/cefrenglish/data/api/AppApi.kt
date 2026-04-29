@@ -45,4 +45,7 @@ interface AppApi {
 
     @GET("api/me/summary")
     suspend fun fetchSummary(@Query("userId") userId: String): ProgressSummaryDto
+
+    @POST("api/review/complete")
+    suspend fun completeReview(@Body request: CompleteReviewRequestDto): CompleteReviewResultDto
 }

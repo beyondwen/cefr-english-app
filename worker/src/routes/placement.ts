@@ -18,7 +18,7 @@ export const handlePlacement = async (request: Request, env: Env): Promise<Respo
   }
   const result = assessPlacement(payload)
 
-  await createUserRepository(env.DB).upsert(payload.userId, result.level)
+  await createUserRepository(env.DB).upsert(payload.userId, result.level, result.weaknesses)
   await createPlacementRepository(env.DB).insert(payload.userId, result, payload.answers)
 
   return json(result)

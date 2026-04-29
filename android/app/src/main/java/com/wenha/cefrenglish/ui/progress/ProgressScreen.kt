@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wenha.cefrenglish.domain.ReviewItem
 import com.wenha.cefrenglish.ui.common.AppBlue
+import com.wenha.cefrenglish.ui.common.AppInk
 import com.wenha.cefrenglish.ui.common.AppMuted
 import com.wenha.cefrenglish.ui.common.ChipRow
 import com.wenha.cefrenglish.ui.common.ErrorNotice
@@ -27,6 +29,7 @@ import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.PrimaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
+import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.StatTile
 
 @Composable
@@ -95,6 +98,14 @@ fun ProgressScreen(
                     ChipRow(state.recentWeaknesses, emptyText = "暂无薄弱项")
                 }
 
+                SectionCard {
+                    SectionTitle("复习任务", "这些任务来自最近的薄弱项。")
+                    ReviewItemList(
+                        items = state.reviewItems,
+                        onComplete = { viewModel.completeReview(userId, it) },
+                    )
+                }
+
                 PrimaryAction(
                     text = if (state.isLoading) "正在刷新..." else "刷新进度",
                     enabled = !state.isLoading,
@@ -103,6 +114,35 @@ fun ProgressScreen(
                         onRefresh()
                     },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewItemList(items: List<ReviewItem>, onComplete: (String) -> Unit) {
+    if (items.isEmpty()) {
+        Text("暂无复习任务", color = AppMuted)
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items.forEach { item ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(item.title, color = AppInk, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (item.status == "completed") "已完成 · 掌握度 ${item.masteryScore}/3" else "待复习 · 掌握度 ${item.masteryScore}/3",
+                        color = AppBlue,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(item.task, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
+                    item.steps.forEachIndexed { index, step ->
+                        Text("${index + 1}. $step", color = AppMuted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    SecondaryAction(
+                        text = if (item.status == "completed") "再次完成" else "标记完成",
+                        onClick = { onComplete(item.reviewId) },
+                    )
+                }
             }
         }
     }

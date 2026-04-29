@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.wenha.cefrenglish.data.ProgressRepository
 import com.wenha.cefrenglish.data.SyllabusRepository
 import com.wenha.cefrenglish.domain.CourseSyllabus
+import com.wenha.cefrenglish.domain.ReviewItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ data class HomeUiState(
     val nextLessonId: String? = null,
     val todayCompleted: Boolean = false,
     val recentWeaknesses: List<String> = emptyList(),
+    val reviewItems: List<ReviewItem> = emptyList(),
     val selectedSyllabus: CourseSyllabus? = null,
     val regeneratingLevel: String? = null,
     val isLoading: Boolean = false,
@@ -48,6 +50,7 @@ class HomeViewModel(
                         nextLessonId = summary.nextLessonId,
                         todayCompleted = summary.todayCompleted,
                         recentWeaknesses = summary.recentWeaknesses,
+                        reviewItems = summary.reviewItems,
                         selectedSyllabus = _uiState.value.selectedSyllabus,
                         regeneratingLevel = _uiState.value.regeneratingLevel,
                         isLoading = false,
@@ -69,6 +72,18 @@ class HomeViewModel(
 
     fun retryRefresh() {
         refresh(_uiState.value.lastUserId)
+    }
+
+    fun completeReview(reviewId: String) {
+        val userId = _uiState.value.lastUserId
+        if (userId.isBlank()) return
+        viewModelScope.launch {
+            runCatching { repository.completeReview(userId, reviewId) }
+                .onSuccess { refresh(userId) }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(errorMessage = "无法更新复习状态，请稍后重试。")
+                }
+        }
     }
 
     fun loadSyllabus(level: String) {

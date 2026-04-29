@@ -108,6 +108,16 @@ data class LessonSubmissionResult(
     val feedback: WritingReview,
 )
 
+data class ReviewItem(
+    val reviewId: String,
+    val skill: String,
+    val title: String,
+    val task: String,
+    val steps: List<String>,
+    val status: String,
+    val masteryScore: Int,
+)
+
 data class ProgressSummary(
     val currentLevel: String,
     val currentLessonId: String?,
@@ -117,4 +127,5 @@ data class ProgressSummary(
     val nextLessonId: String?,
     val todayCompleted: Boolean,
     val recentWeaknesses: List<String>,
+    val reviewItems: List<ReviewItem>,
 )

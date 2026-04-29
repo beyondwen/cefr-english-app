@@ -166,4 +166,26 @@ data class ProgressSummaryDto(
     val nextLessonId: String?,
     val todayCompleted: Boolean,
     val recentWeaknesses: List<String>,
+    val reviewItems: List<ReviewItemDto> = emptyList(),
+)
+
+data class CompleteReviewRequestDto(
+    val userId: String,
+    val reviewId: String,
+)
+
+data class CompleteReviewResultDto(
+    val reviewId: String,
+    val status: String,
+    val masteryScore: Int,
+)
+
+data class ReviewItemDto(
+    val reviewId: String,
+    val skill: String,
+    val title: String,
+    val task: String,
+    val steps: List<String> = emptyList(),
+    val status: String = "pending",
+    val masteryScore: Int = 0,
 )

@@ -3,6 +3,7 @@ package com.wenha.cefrenglish.ui.progress
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wenha.cefrenglish.data.ProgressRepository
+import com.wenha.cefrenglish.domain.ReviewItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,6 +17,7 @@ data class ProgressUiState(
     val currentLessonId: String = "",
     val todayCompleted: Boolean = false,
     val recentWeaknesses: List<String> = emptyList(),
+    val reviewItems: List<ReviewItem> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )
@@ -39,6 +41,7 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
                         currentLessonId = result.currentLessonId.orEmpty(),
                         todayCompleted = result.todayCompleted,
                         recentWeaknesses = result.recentWeaknesses,
+                        reviewItems = result.reviewItems,
                         isLoading = false,
                         errorMessage = null,
                     )
@@ -48,6 +51,17 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
                         isLoading = false,
                         errorMessage = "无法加载进度，请检查网络后重试。",
                     )
+                }
+        }
+    }
+
+    fun completeReview(userId: String, reviewId: String) {
+        if (userId.isBlank()) return
+        viewModelScope.launch {
+            runCatching { repository.completeReview(userId, reviewId) }
+                .onSuccess { refresh(userId) }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(errorMessage = "无法更新复习状态，请稍后重试。")
                 }
         }
     }

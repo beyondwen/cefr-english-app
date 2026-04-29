@@ -19,6 +19,16 @@ export type PlacementResult = {
   weaknesses: Weakness[]
 }
 
+export type ReviewItem = {
+  reviewId: string
+  skill: Weakness
+  title: string
+  task: string
+  steps: string[]
+  status: 'pending' | 'completed'
+  masteryScore: number
+}
+
 export type PlacementQuestion = {
   prompt: string
   options: string[]

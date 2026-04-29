@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wenha.cefrenglish.domain.CourseSyllabus
+import com.wenha.cefrenglish.domain.ReviewItem
 import com.wenha.cefrenglish.domain.SyllabusModule
 import com.wenha.cefrenglish.ui.common.AppBlue
 import com.wenha.cefrenglish.ui.common.AppGreen
@@ -175,6 +176,43 @@ fun HomeScreen(
                 SectionCard {
                     SectionTitle("薄弱项", "选择章节学习后，练习反馈会继续帮助你发现薄弱项。")
                     ChipRow(state.recentWeaknesses, emptyText = "暂无薄弱项")
+                }
+
+                SectionCard {
+                    SectionTitle("今日复习", "先处理最近暴露的问题，再进入新内容。")
+                    ReviewItemList(
+                        items = state.reviewItems,
+                        onComplete = { viewModel.completeReview(it) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewItemList(items: List<ReviewItem>, onComplete: (String) -> Unit) {
+    if (items.isEmpty()) {
+        Text("暂无复习任务", color = AppMuted)
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items.forEach { item ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(item.title, color = AppInk, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (item.status == "completed") "已完成 · 掌握度 ${item.masteryScore}/3" else "待复习 · 掌握度 ${item.masteryScore}/3",
+                        color = AppBlue,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(item.task, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
+                    item.steps.forEachIndexed { index, step ->
+                        Text("${index + 1}. $step", color = AppMuted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    SecondaryAction(
+                        text = if (item.status == "completed") "再次完成" else "标记完成",
+                        onClick = { onComplete(item.reviewId) },
+                    )
                 }
             }
         }

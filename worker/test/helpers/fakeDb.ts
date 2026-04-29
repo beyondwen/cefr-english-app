@@ -7,6 +7,7 @@ type TableState = {
   lesson_instances: Map<string, { lesson_json: string; status: string; template_id: string; generation_version: number; level: string }>
   lesson_submissions: Row[]
   writing_reviews: Row[]
+  review_progress: Map<string, { user_id: string; review_id: string; status: string; mastery_score: number }>
   progress: Map<
     string,
     {
@@ -29,6 +30,7 @@ export const createFakeEnv = () => {
     lesson_instances: new Map(),
     lesson_submissions: [],
     writing_reviews: [],
+    review_progress: new Map(),
     progress: new Map(),
     course_syllabuses: new Map([
       [
@@ -51,7 +53,7 @@ export const createFakeEnv = () => {
         bind(...params: unknown[]) {
           return {
             async run() {
-              if (sql.startsWith('INSERT INTO users')) {
+              if (sql.includes('INSERT INTO users')) {
                 state.users.set(String(params[0]), {
                   current_level: String(params[1]),
                   recent_weaknesses_json: typeof params[2] === 'string' ? String(params[2]) : '[]',
@@ -107,6 +109,14 @@ export const createFakeEnv = () => {
               if (sql.startsWith('INSERT INTO writing_reviews')) {
                 state.writing_reviews.push({ user_id: params[0], lesson_id: params[1] })
               }
+              if (sql.startsWith('INSERT INTO review_progress')) {
+                state.review_progress.set(`${params[0]}:${params[1]}`, {
+                  user_id: String(params[0]),
+                  review_id: String(params[1]),
+                  status: String(params[2]),
+                  mastery_score: Number(params[3]),
+                })
+              }
               if (sql.startsWith('INSERT INTO progress') || sql.startsWith('INSERT OR REPLACE INTO progress')) {
                 state.progress.set(String(params[0]), {
                   level: String(params[1]),
@@ -128,7 +138,7 @@ export const createFakeEnv = () => {
               return { success: true }
             },
             async first<T>() {
-              if (sql.startsWith('SELECT current_level FROM users')) {
+              if (sql.startsWith('SELECT current_level')) {
                 const row = state.users.get(String(params[0]))
                 return row
                   ? ({
@@ -184,11 +194,29 @@ export const createFakeEnv = () => {
                     } as T)
                   : null
               }
+              if (sql.startsWith('SELECT mastery_score FROM review_progress')) {
+                const row = state.review_progress.get(`${params[0]}:${params[1]}`)
+                return row ? ({ mastery_score: row.mastery_score } as T) : null
+              }
               if (sql.startsWith('SELECT level, title, description, modules_json FROM course_syllabuses')) {
                 const row = state.course_syllabuses.get(String(params[0]))
                 return row ? ({ ...row } as T) : null
               }
               return null
+            },
+            async all<T>() {
+              if (sql.startsWith('SELECT review_id, status, mastery_score FROM review_progress')) {
+                return {
+                  results: [...state.review_progress.values()]
+                    .filter((row) => row.user_id === String(params[0]))
+                    .map((row) => ({
+                      review_id: row.review_id,
+                      status: row.status,
+                      mastery_score: row.mastery_score,
+                    })) as T[],
+                }
+              }
+              return { results: [] as T[] }
             },
           }
         },
