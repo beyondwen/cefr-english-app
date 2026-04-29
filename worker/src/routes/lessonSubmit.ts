@@ -27,7 +27,7 @@ export const handleLessonSubmit = async (request: Request, env: Env): Promise<Re
     readingAnswers: string[]
     grammarAnswers: string[]
     writingSubmission: string
-    writingRevision?: string
+    writingRevision?: string | null
   }
   if (
     !payload.userId ||

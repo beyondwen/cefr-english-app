@@ -75,4 +75,28 @@ class LessonViewModelTest {
             Dispatchers.resetMain()
         }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun submitLesson_omitsWritingRevisionBeforeRevisionIsRequired() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeLessonRepository()
+            val viewModel = LessonViewModel(repository)
+
+            viewModel.loadTodayLesson("u1")
+            viewModel.updateReadingAnswer(0, "answer")
+            viewModel.updateReadingAnswer(1, "answer")
+            viewModel.updateReadingAnswer(2, "answer")
+            viewModel.updateGrammarAnswer(0, "answer")
+            viewModel.updateGrammarAnswer(1, "answer")
+            viewModel.updateGrammarAnswer(2, "answer")
+            viewModel.updateWriting("I study English today. I write two sentences.")
+            viewModel.submitLesson("u1")
+
+            assertEquals(null, repository.lastWritingRevision)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
 }

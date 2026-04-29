@@ -11,6 +11,8 @@ import com.wenha.cefrenglish.domain.WritingRuleChecks
 
 class FakeLessonRepository : LessonRepository {
     private var version = 1
+    var lastWritingRevision: String? = null
+        private set
 
     override suspend fun getTodayLesson(userId: String): DailyLesson {
         return DailyLesson(
@@ -57,8 +59,9 @@ class FakeLessonRepository : LessonRepository {
         readingAnswers: List<String>,
         grammarAnswers: List<String>,
         writingSubmission: String,
-        writingRevision: String,
+        writingRevision: String?,
     ): LessonSubmissionResult {
+        lastWritingRevision = writingRevision
         val sentenceCount = writingSubmission
             .split(".", "!", "?")
             .map { it.trim() }

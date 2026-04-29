@@ -38,7 +38,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wenha.cefrenglish.domain.CourseSyllabus
-import com.wenha.cefrenglish.domain.ReviewItem
 import com.wenha.cefrenglish.domain.SyllabusModule
 import com.wenha.cefrenglish.ui.common.AppBlue
 import com.wenha.cefrenglish.ui.common.AppGreen
@@ -51,6 +50,7 @@ import com.wenha.cefrenglish.ui.common.HeroPanel
 import com.wenha.cefrenglish.ui.common.LearningPage
 import com.wenha.cefrenglish.ui.common.LoadingNotice
 import com.wenha.cefrenglish.ui.common.Pill
+import com.wenha.cefrenglish.ui.common.ReviewTaskList
 import com.wenha.cefrenglish.ui.common.SecondaryAction
 import com.wenha.cefrenglish.ui.common.SectionCard
 import com.wenha.cefrenglish.ui.common.SectionTitle
@@ -131,49 +131,15 @@ fun HomeScreen(
 
                 SectionCard {
                     SectionTitle("今日复习", "先处理最近暴露的问题，再进入新内容。")
-                    ReviewItemList(
+                    ReviewTaskList(
                         items = state.reviewItems,
+                        completingReviewId = state.completingReviewId,
                         onComplete = { viewModel.completeReview(it) },
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-private fun ReviewItemList(items: List<ReviewItem>, onComplete: (String) -> Unit) {
-    if (items.isEmpty()) {
-        Text("暂无复习任务", color = AppMuted)
-    } else {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items.forEach { item ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(item.title, color = AppInk, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        buildReviewMeta(item),
-                        color = AppBlue,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(item.task, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
-                    item.steps.forEachIndexed { index, step ->
-                        Text("${index + 1}. $step", color = AppMuted, style = MaterialTheme.typography.bodySmall)
-                    }
-                    SecondaryAction(
-                        text = if (item.status == "completed") "再次完成" else "标记完成",
-                        onClick = { onComplete(item.reviewId) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun buildReviewMeta(item: ReviewItem): String {
-    val status = if (item.status == "completed") "已完成" else "待复习"
-    val due = item.dueDate?.let { " · 到期 $it" } ?: ""
-    return "$status$due · 掌握度 ${item.masteryScore}/3"
 }
 
 @Composable
@@ -378,7 +344,7 @@ private fun CoursePath(items: List<CoursePathItem>, onStart: (moduleIndex: Int) 
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = "第 1 章",
+                        text = "学习路径",
                         color = AppInk,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
@@ -653,10 +619,10 @@ private data class PathNodeColors(
 private fun lessonPathColors(status: CoursePathStatus): PathNodeColors =
     when (status) {
         CoursePathStatus.Completed -> PathNodeColors(
-            outer = Color(0xFFE7ECF3),
-            inner = Color.White,
-            stroke = Color(0xFFD5DDE8),
-            nodeText = AppGreen,
+            outer = Color(0xFFDDF7E7),
+            inner = AppGreen,
+            stroke = Color.White,
+            nodeText = Color.White,
             line = AppGreen,
             nextLine = AppGreen,
             card = Color.Transparent,
@@ -665,40 +631,40 @@ private fun lessonPathColors(status: CoursePathStatus): PathNodeColors =
             badgeText = AppGreen,
         )
         CoursePathStatus.Current -> PathNodeColors(
-            outer = Color(0xFFE7ECF3),
-            inner = Color.White,
-            stroke = Color(0xFFD5DDE8),
-            nodeText = AppBlue,
+            outer = Color(0xFFDCEBFF),
+            inner = AppBlue,
+            stroke = Color.White,
+            nodeText = Color.White,
             line = AppGreen,
-            nextLine = Color(0xFFDDE5F0),
+            nextLine = Color(0xFF9CC7FF),
             card = Color(0xFFF0F6FF),
             title = AppInk,
             body = AppMuted,
             badgeText = AppBlue,
         )
         CoursePathStatus.Available -> PathNodeColors(
-            outer = Color(0xFFE7ECF3),
-            inner = Color.White,
-            stroke = Color(0xFFD5DDE8),
-            nodeText = AppBlue,
-            line = Color(0xFFDDE5F0),
-            nextLine = Color(0xFFDDE5F0),
+            outer = Color(0xFFE0F7FF),
+            inner = Color(0xFF17A8FF),
+            stroke = Color.White,
+            nodeText = Color.White,
+            line = Color(0xFFB9DDF6),
+            nextLine = Color(0xFFDDEAF5),
             card = Color.Transparent,
             title = AppInk,
             body = AppMuted,
-            badgeText = AppBlue,
+            badgeText = Color(0xFF087EA4),
         )
         CoursePathStatus.Locked -> PathNodeColors(
-            outer = Color(0xFFE7ECF3),
-            inner = Color(0xFFF7F9FC),
-            stroke = Color(0xFFD5DDE8),
-            nodeText = AppMuted,
-            line = Color(0xFFDDE5F0),
-            nextLine = Color(0xFFDDE5F0),
+            outer = Color(0xFFEAE7FF),
+            inner = Color(0xFFF6F3FF),
+            stroke = Color(0xFFC9C1F4),
+            nodeText = Color(0xFF6B5CA5),
+            line = Color(0xFFE2DEF6),
+            nextLine = Color(0xFFE2DEF6),
             card = Color.Transparent,
-            title = AppMuted,
-            body = AppMuted,
-            badgeText = AppMuted,
+            title = Color(0xFF7A708F),
+            body = Color(0xFF827990),
+            badgeText = Color(0xFF6B5CA5),
         )
     }
 
@@ -718,28 +684,28 @@ private fun checkpointPathColors(status: CoursePathStatus): PathNodeColors =
         )
         CoursePathStatus.Current,
         CoursePathStatus.Available -> PathNodeColors(
-            outer = Color(0xFFFFE9A8),
-            inner = AppYellow,
+            outer = Color(0xFFFFF1BF),
+            inner = Color(0xFFFFC857),
             stroke = Color.White,
             nodeText = AppInk,
-            line = Color(0xFFDDE5F0),
-            nextLine = Color(0xFFDDE5F0),
-            card = Color(0xFFFFF4CF),
+            line = Color(0xFFEADBA8),
+            nextLine = Color(0xFFDDEAF5),
+            card = Color(0xFFFFF7DA),
             title = AppInk,
             body = Color(0xFF7A5A13),
             badgeText = Color(0xFF9A6700),
         )
         CoursePathStatus.Locked -> PathNodeColors(
-            outer = Color(0xFFE7ECF3),
-            inner = Color(0xFFF7F9FC),
-            stroke = Color(0xFFD5DDE8),
-            nodeText = AppMuted,
-            line = Color(0xFFDDE5F0),
-            nextLine = Color(0xFFDDE5F0),
-            card = Color.White,
-            title = AppMuted,
-            body = AppMuted,
-            badgeText = AppMuted,
+            outer = Color(0xFFEAE7FF),
+            inner = Color(0xFFF6F3FF),
+            stroke = Color(0xFFC9C1F4),
+            nodeText = Color(0xFF6B5CA5),
+            line = Color(0xFFE2DEF6),
+            nextLine = Color(0xFFE2DEF6),
+            card = Color(0xFFFBFAFF),
+            title = Color(0xFF7A708F),
+            body = Color(0xFF827990),
+            badgeText = Color(0xFF6B5CA5),
         )
     }
 

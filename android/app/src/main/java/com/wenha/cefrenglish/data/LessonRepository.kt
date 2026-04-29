@@ -27,7 +27,7 @@ interface LessonRepository {
         readingAnswers: List<String>,
         grammarAnswers: List<String>,
         writingSubmission: String,
-        writingRevision: String,
+        writingRevision: String?,
     ): LessonSubmissionResult
 }
 
@@ -55,7 +55,7 @@ class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
         readingAnswers: List<String>,
         grammarAnswers: List<String>,
         writingSubmission: String,
-        writingRevision: String,
+        writingRevision: String?,
     ): LessonSubmissionResult {
         val response = api.submitLesson(
             LessonSubmitRequestDto(

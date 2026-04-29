@@ -22,6 +22,7 @@ data class HomeUiState(
     val reviewItems: List<ReviewItem> = emptyList(),
     val selectedSyllabus: CourseSyllabus? = null,
     val regeneratingLevel: String? = null,
+    val completingReviewId: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val hasLoaded: Boolean = false,
@@ -53,6 +54,7 @@ class HomeViewModel(
                         reviewItems = summary.reviewItems,
                         selectedSyllabus = _uiState.value.selectedSyllabus,
                         regeneratingLevel = _uiState.value.regeneratingLevel,
+                        completingReviewId = null,
                         isLoading = false,
                         errorMessage = null,
                         hasLoaded = true,
@@ -78,10 +80,14 @@ class HomeViewModel(
         val userId = _uiState.value.lastUserId
         if (userId.isBlank()) return
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(completingReviewId = reviewId, errorMessage = null)
             runCatching { repository.completeReview(userId, reviewId) }
                 .onSuccess { refresh(userId) }
                 .onFailure {
-                    _uiState.value = _uiState.value.copy(errorMessage = "无法更新复习状态，请稍后重试。")
+                    _uiState.value = _uiState.value.copy(
+                        completingReviewId = null,
+                        errorMessage = "无法更新复习状态，请稍后重试。",
+                    )
                 }
         }
     }

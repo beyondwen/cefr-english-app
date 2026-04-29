@@ -152,7 +152,7 @@ data class LessonSubmitRequestDto(
     val readingAnswers: List<String>,
     val grammarAnswers: List<String>,
     val writingSubmission: String,
-    val writingRevision: String,
+    val writingRevision: String? = null,
 )
 
 data class LessonSubmitResultDto(

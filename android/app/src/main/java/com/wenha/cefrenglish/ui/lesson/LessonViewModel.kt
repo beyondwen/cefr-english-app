@@ -155,7 +155,7 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
                     readingAnswers = lesson.readingAnswers,
                     grammarAnswers = lesson.grammarAnswers,
                     writingSubmission = lesson.writingSubmission,
-                    writingRevision = lesson.writingRevision,
+                    writingRevision = lesson.writingRevision.takeIf { lesson.submissionResult?.revisionRequired == true },
                 )
             }.onSuccess { result ->
                 _uiState.value = _uiState.value.copy(

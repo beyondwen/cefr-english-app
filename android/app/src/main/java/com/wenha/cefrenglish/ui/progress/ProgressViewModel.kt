@@ -18,6 +18,7 @@ data class ProgressUiState(
     val todayCompleted: Boolean = false,
     val recentWeaknesses: List<String> = emptyList(),
     val reviewItems: List<ReviewItem> = emptyList(),
+    val completingReviewId: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )
@@ -42,6 +43,7 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
                         todayCompleted = result.todayCompleted,
                         recentWeaknesses = result.recentWeaknesses,
                         reviewItems = result.reviewItems,
+                        completingReviewId = null,
                         isLoading = false,
                         errorMessage = null,
                     )
@@ -58,10 +60,14 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
     fun completeReview(userId: String, reviewId: String) {
         if (userId.isBlank()) return
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(completingReviewId = reviewId, errorMessage = null)
             runCatching { repository.completeReview(userId, reviewId) }
                 .onSuccess { refresh(userId) }
                 .onFailure {
-                    _uiState.value = _uiState.value.copy(errorMessage = "无法更新复习状态，请稍后重试。")
+                    _uiState.value = _uiState.value.copy(
+                        completingReviewId = null,
+                        errorMessage = "无法更新复习状态，请稍后重试。",
+                    )
                 }
         }
     }

@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.wenha.cefrenglish.domain.ReviewItem
 
 val AppBlue = Color(0xFF0057D9)
 val AppSky = Color(0xFF17A8FF)
@@ -299,4 +300,54 @@ fun StepBadge(text: String, active: Boolean = true) {
     ) {
         Text(text, color = if (active) Color.White else AppMuted, fontWeight = FontWeight.Bold)
     }
+}
+
+@Composable
+fun ReviewTaskList(
+    items: List<ReviewItem>,
+    completingReviewId: String? = null,
+    onComplete: (String) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Text("暂无复习任务", color = AppMuted)
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items.forEach { item ->
+                val completing = item.reviewId == completingReviewId
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = item.title,
+                        color = AppInk,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = buildReviewMeta(item),
+                        color = AppBlue,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(item.task, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
+                    item.steps.forEachIndexed { index, step ->
+                        Text("${index + 1}. $step", color = AppMuted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    SecondaryAction(
+                        text = when {
+                            completing -> "更新中..."
+                            item.status == "completed" -> "再次完成"
+                            else -> "标记完成"
+                        },
+                        enabled = !completing,
+                        onClick = { onComplete(item.reviewId) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun buildReviewMeta(item: ReviewItem): String {
+    val status = if (item.status == "completed") "已完成" else "待复习"
+    val due = item.dueDate?.let { " · 到期 $it" } ?: ""
+    return "$status$due · 掌握度 ${item.masteryScore}/3"
 }

@@ -81,7 +81,7 @@ export const submitLesson = async (input: {
   lessonInstanceId: string
   readingAnswers: string[]
   grammarAnswers: string[]
-  writingRevision?: string
+  writingRevision?: string | null
   lessonRepo: {
     findByInstanceId(lessonInstanceId: string): Promise<{
       templateId: string
@@ -141,7 +141,7 @@ export const submitLesson = async (input: {
   if (answerFeedback.grammar.length > 0) missingRequirements.push('grammar_incorrect')
   if (!input.reviewResult.ruleChecks.notBlank) missingRequirements.push('writing_blank')
   if (!input.reviewResult.ruleChecks.minSentencesOk) missingRequirements.push('writing_min_sentences')
-  if (input.writingRevision !== undefined && input.writingRevision.trim().length === 0) {
+  if (input.writingRevision != null && input.writingRevision.trim().length === 0) {
     missingRequirements.push('writing_revision_required')
   }
 

@@ -202,7 +202,7 @@ fun LessonScreen(
                 state.submissionResult?.missingRequirements?.takeIf { it.isNotEmpty() }?.let { missing ->
                     SectionCard {
                         SectionTitle("提交前检查", "还有几项要求需要补齐。")
-                        ChipRow(missing, emptyText = "已准备好")
+                        ChipRow(missing.map(::missingRequirementText), emptyText = "已准备好")
                     }
                 }
 
@@ -409,3 +409,16 @@ private fun FeedbackLine(label: String, value: String) {
         Text(value, color = AppMuted, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+private fun missingRequirementText(requirement: String): String =
+    when (requirement) {
+        "reading_incomplete" -> "阅读题还没答完"
+        "grammar_incomplete" -> "语法题还没答完"
+        "reading_incorrect" -> "阅读题需要订正"
+        "grammar_incorrect" -> "语法题需要订正"
+        "writing_blank" -> "写作不能为空"
+        "writing_min_sentences" -> "写作至少需要两句"
+        "writing_revision_required" -> "需要提交写作订正版"
+        "lesson_not_found" -> "课程已失效，请重新加载"
+        else -> requirement
+    }
