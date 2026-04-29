@@ -49,4 +49,23 @@ class HomeViewModelTest {
             Dispatchers.resetMain()
         }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun completeReview_marksReviewAndRefreshesSummary() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeHomeRepository()
+            val viewModel = HomeViewModel(repository, FakeSyllabusRepository())
+
+            viewModel.refresh("u1")
+            viewModel.completeReview("weakness:grammar")
+
+            assertEquals("weakness:grammar", repository.completedReviewId)
+            assertNull(viewModel.uiState.value.completingReviewId)
+            assertNull(viewModel.uiState.value.errorMessage)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
 }

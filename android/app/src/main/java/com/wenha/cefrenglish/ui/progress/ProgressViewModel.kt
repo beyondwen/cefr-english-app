@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wenha.cefrenglish.data.ProgressRepository
 import com.wenha.cefrenglish.domain.ReviewItem
+import com.wenha.cefrenglish.ui.common.launchReviewCompletion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -58,17 +59,13 @@ class ProgressViewModel(private val repository: ProgressRepository) : ViewModel(
     }
 
     fun completeReview(userId: String, reviewId: String) {
-        if (userId.isBlank()) return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(completingReviewId = reviewId, errorMessage = null)
-            runCatching { repository.completeReview(userId, reviewId) }
-                .onSuccess { refresh(userId) }
-                .onFailure {
-                    _uiState.value = _uiState.value.copy(
-                        completingReviewId = null,
-                        errorMessage = "无法更新复习状态，请稍后重试。",
-                    )
-                }
-        }
+        launchReviewCompletion(
+            userId = userId,
+            reviewId = reviewId,
+            repository = repository,
+            setCompletingReviewId = { _uiState.value = _uiState.value.copy(completingReviewId = it, errorMessage = null) },
+            setErrorMessage = { _uiState.value = _uiState.value.copy(errorMessage = it) },
+            refresh = ::refresh,
+        )
     }
 }

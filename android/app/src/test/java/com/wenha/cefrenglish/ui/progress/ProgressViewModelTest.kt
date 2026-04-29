@@ -28,4 +28,22 @@ class ProgressViewModelTest {
             Dispatchers.resetMain()
         }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun completeReview_marksReviewAndRefreshesSummary() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeProgressRepository()
+            val viewModel = ProgressViewModel(repository)
+
+            viewModel.completeReview("u1", "weakness:grammar")
+
+            assertEquals("weakness:grammar", repository.completedReviewId)
+            assertEquals(null, viewModel.uiState.value.completingReviewId)
+            assertEquals(null, viewModel.uiState.value.errorMessage)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
 }

@@ -4,6 +4,9 @@ import com.wenha.cefrenglish.data.ProgressRepository
 import com.wenha.cefrenglish.domain.ProgressSummary
 
 class FakeProgressRepository : ProgressRepository {
+    var completedReviewId: String? = null
+        private set
+
     override suspend fun fetchSummary(userId: String): ProgressSummary {
         return ProgressSummary(
             currentLevel = "A1",
@@ -18,5 +21,7 @@ class FakeProgressRepository : ProgressRepository {
         )
     }
 
-    override suspend fun completeReview(userId: String, reviewId: String) = Unit
+    override suspend fun completeReview(userId: String, reviewId: String) {
+        completedReviewId = reviewId
+    }
 }

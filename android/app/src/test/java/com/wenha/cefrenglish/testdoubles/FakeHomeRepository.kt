@@ -16,6 +16,11 @@ class FakeHomeRepository(
         reviewItems = emptyList(),
     ),
 ) : ProgressRepository {
+    var completedReviewId: String? = null
+        private set
+
     override suspend fun fetchSummary(userId: String): ProgressSummary = summary
-    override suspend fun completeReview(userId: String, reviewId: String) = Unit
+    override suspend fun completeReview(userId: String, reviewId: String) {
+        completedReviewId = reviewId
+    }
 }
