@@ -14,6 +14,9 @@ class FakeProgressRepository : ProgressRepository {
             nextLessonId = "A1-02",
             todayCompleted = false,
             recentWeaknesses = listOf("grammar"),
+            reviewItems = emptyList(),
         )
     }
+
+    override suspend fun completeReview(userId: String, reviewId: String) = Unit
 }

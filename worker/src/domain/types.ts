@@ -25,6 +25,7 @@ export type ReviewItem = {
   title: string
   task: string
   steps: string[]
+  dueDate?: string
   status: 'pending' | 'completed'
   masteryScore: number
 }
@@ -162,4 +163,16 @@ export type LessonSubmitResult = {
   missingRequirements: string[]
   ruleChecks: WritingRuleChecks
   revisionRequired: boolean
+  answerFeedback?: {
+    reading: LessonAnswerFeedback[]
+    grammar: LessonAnswerFeedback[]
+  }
+}
+
+export type LessonAnswerFeedback = {
+  questionId: string
+  prompt: string
+  expectedAnswer: string
+  submittedAnswer: string
+  correct: boolean
 }

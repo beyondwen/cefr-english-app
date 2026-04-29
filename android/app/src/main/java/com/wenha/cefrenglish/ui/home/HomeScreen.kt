@@ -200,7 +200,7 @@ private fun ReviewItemList(items: List<ReviewItem>, onComplete: (String) -> Unit
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(item.title, color = AppInk, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (item.status == "completed") "已完成 · 掌握度 ${item.masteryScore}/3" else "待复习 · 掌握度 ${item.masteryScore}/3",
+                        buildReviewMeta(item),
                         color = AppBlue,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
@@ -217,6 +217,12 @@ private fun ReviewItemList(items: List<ReviewItem>, onComplete: (String) -> Unit
             }
         }
     }
+}
+
+private fun buildReviewMeta(item: ReviewItem): String {
+    val status = if (item.status == "completed") "已完成" else "待复习"
+    val due = item.dueDate?.let { " · 到期 $it" } ?: ""
+    return "$status$due · 掌握度 ${item.masteryScore}/3"
 }
 
 @Composable

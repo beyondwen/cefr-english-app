@@ -117,6 +117,15 @@ data class WritingFeedbackDto(
     val coherence: String,
     val suggestions: List<String>,
     val rewrite: String,
+    val issues: List<WritingIssueDto> = emptyList(),
+)
+
+data class WritingIssueDto(
+    val errorType: String,
+    val originalText: String,
+    val correction: String,
+    val explanation: String,
+    val practicePrompt: String,
 )
 
 data class WritingReviewResultDto(
@@ -155,6 +164,20 @@ data class LessonSubmitResultDto(
     val ruleChecks: WritingRuleChecksDto,
     val revisionRequired: Boolean = false,
     val feedback: WritingFeedbackDto,
+    val answerFeedback: LessonAnswerFeedbackGroupDto? = null,
+)
+
+data class LessonAnswerFeedbackDto(
+    val questionId: String,
+    val prompt: String,
+    val expectedAnswer: String,
+    val submittedAnswer: String,
+    val correct: Boolean,
+)
+
+data class LessonAnswerFeedbackGroupDto(
+    val reading: List<LessonAnswerFeedbackDto> = emptyList(),
+    val grammar: List<LessonAnswerFeedbackDto> = emptyList(),
 )
 
 data class ProgressSummaryDto(
@@ -186,6 +209,7 @@ data class ReviewItemDto(
     val title: String,
     val task: String,
     val steps: List<String> = emptyList(),
+    val dueDate: String? = null,
     val status: String = "pending",
     val masteryScore: Int = 0,
 )

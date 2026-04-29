@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wenha.cefrenglish.domain.LessonAnswerFeedback
 import com.wenha.cefrenglish.domain.DialogueLine
 import com.wenha.cefrenglish.domain.KeySentence
 import com.wenha.cefrenglish.domain.LessonQuestion
@@ -205,6 +206,16 @@ fun LessonScreen(
                     }
                 }
 
+                state.submissionResult?.answerFeedback?.let { feedback ->
+                    if (feedback.reading.isNotEmpty() || feedback.grammar.isNotEmpty()) {
+                        SectionCard {
+                            SectionTitle("错题订正", "先订正这些题，再进入下一课。")
+                            AnswerFeedbackList("阅读", feedback.reading)
+                            AnswerFeedbackList("语法", feedback.grammar)
+                        }
+                    }
+                }
+
                 state.feedback?.let {
                     SectionCard {
                         SectionTitle("反馈", "继续前先查看本次练习建议。")
@@ -213,6 +224,11 @@ fun LessonScreen(
                         FeedbackLine("连贯性", it.coherence)
                         if (it.suggestions.isNotEmpty()) {
                             ChipRow(it.suggestions, emptyText = "暂无建议")
+                        }
+                        if (it.issues.isNotEmpty()) {
+                            it.issues.forEach { issue ->
+                                FeedbackLine("写作问题：${issue.errorType}", issue.practicePrompt)
+                            }
                         }
                     }
                 }
@@ -368,6 +384,21 @@ private fun QuestionField(
             label = { Text("答案") },
             singleLine = true,
         )
+    }
+}
+
+@Composable
+private fun AnswerFeedbackList(label: String, items: List<LessonAnswerFeedback>) {
+    if (items.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, color = AppBlue, fontWeight = FontWeight.SemiBold)
+        items.forEach { item ->
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(item.prompt, color = AppInk, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text("你的答案：${item.submittedAnswer.ifBlank { "空白" }}", color = AppMuted, style = MaterialTheme.typography.bodySmall)
+                Text("参考答案：${item.expectedAnswer}", color = AppMuted, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
 

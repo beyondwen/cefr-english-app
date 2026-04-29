@@ -2,6 +2,9 @@ import { lessonBlueprints } from '../domain/cefrCatalog'
 import type { CefrLevel, LessonPayload } from '../domain/types'
 import type { AiProvider } from '../providers/aiProvider'
 
+const toQuestionText = (question: string | { prompt?: string }): string =>
+  typeof question === 'string' ? question : question.prompt ?? JSON.stringify(question)
+
 export const getNextLesson = async (input: {
   userId: string
   level: CefrLevel
@@ -28,9 +31,9 @@ export const getNextLesson = async (input: {
     unitIndex: blueprint.unitIndex,
     grammarFocus: blueprint.grammarFocus,
     readingText: generated.readingText,
-    readingQuestions: generated.readingQuestions,
+    readingQuestions: generated.readingQuestions.map(toQuestionText),
     grammarExplanation: generated.grammarExplanation,
-    grammarQuestions: generated.grammarQuestions,
+    grammarQuestions: generated.grammarQuestions.map(toQuestionText),
     writingPrompt: generated.writingPrompt,
   }
 

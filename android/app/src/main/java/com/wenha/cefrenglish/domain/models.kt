@@ -89,12 +89,34 @@ data class WritingReview(
     val coherence: String,
     val suggestions: List<String>,
     val rewrite: String,
+    val issues: List<WritingIssue> = emptyList(),
+)
+
+data class WritingIssue(
+    val errorType: String,
+    val originalText: String,
+    val correction: String,
+    val explanation: String,
+    val practicePrompt: String,
 )
 
 data class WritingRuleChecks(
     val notBlank: Boolean,
     val minSentencesOk: Boolean,
     val onTopicLikely: Boolean,
+)
+
+data class LessonAnswerFeedback(
+    val questionId: String,
+    val prompt: String,
+    val expectedAnswer: String,
+    val submittedAnswer: String,
+    val correct: Boolean,
+)
+
+data class LessonAnswerFeedbackGroup(
+    val reading: List<LessonAnswerFeedback>,
+    val grammar: List<LessonAnswerFeedback>,
 )
 
 data class LessonSubmissionResult(
@@ -106,6 +128,7 @@ data class LessonSubmissionResult(
     val ruleChecks: WritingRuleChecks,
     val revisionRequired: Boolean,
     val feedback: WritingReview,
+    val answerFeedback: LessonAnswerFeedbackGroup? = null,
 )
 
 data class ReviewItem(
@@ -114,6 +137,7 @@ data class ReviewItem(
     val title: String,
     val task: String,
     val steps: List<String>,
+    val dueDate: String?,
     val status: String,
     val masteryScore: Int,
 )

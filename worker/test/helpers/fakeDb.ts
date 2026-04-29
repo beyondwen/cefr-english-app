@@ -7,6 +7,7 @@ type TableState = {
   lesson_instances: Map<string, { lesson_json: string; status: string; template_id: string; generation_version: number; level: string }>
   lesson_submissions: Row[]
   writing_reviews: Row[]
+  review_items: Map<string, { user_id: string; review_id: string; skill: string; title: string; task: string; steps_json: string; due_date: string; updated_at: string }>
   review_progress: Map<string, { user_id: string; review_id: string; status: string; mastery_score: number }>
   progress: Map<
     string,
@@ -30,6 +31,7 @@ export const createFakeEnv = () => {
     lesson_instances: new Map(),
     lesson_submissions: [],
     writing_reviews: [],
+    review_items: new Map(),
     review_progress: new Map(),
     progress: new Map(),
     course_syllabuses: new Map([
@@ -116,6 +118,25 @@ export const createFakeEnv = () => {
                   status: String(params[2]),
                   mastery_score: Number(params[3]),
                 })
+              }
+              if (sql.startsWith('INSERT INTO review_items')) {
+                state.review_items.set(`${params[0]}:${params[1]}`, {
+                  user_id: String(params[0]),
+                  review_id: String(params[1]),
+                  skill: String(params[2]),
+                  title: String(params[3]),
+                  task: String(params[4]),
+                  steps_json: String(params[5]),
+                  due_date: String(params[6]),
+                  updated_at: String(params[9]),
+                })
+              }
+              if (sql.startsWith('UPDATE review_items SET due_date')) {
+                const existing = state.review_items.get(`${params[2]}:${params[3]}`)
+                if (existing) {
+                  existing.due_date = String(params[0])
+                  existing.updated_at = String(params[1])
+                }
               }
               if (sql.startsWith('INSERT INTO progress') || sql.startsWith('INSERT OR REPLACE INTO progress')) {
                 state.progress.set(String(params[0]), {
@@ -213,6 +234,21 @@ export const createFakeEnv = () => {
                       review_id: row.review_id,
                       status: row.status,
                       mastery_score: row.mastery_score,
+                    })) as T[],
+                }
+              }
+              if (sql.startsWith('SELECT review_id, skill, title, task, steps_json, due_date FROM review_items')) {
+                return {
+                  results: [...state.review_items.values()]
+                    .filter((row) => row.user_id === String(params[0]) && row.due_date <= String(params[1]))
+                    .sort((a, b) => a.due_date.localeCompare(b.due_date) || b.updated_at.localeCompare(a.updated_at))
+                    .map((row) => ({
+                      review_id: row.review_id,
+                      skill: row.skill,
+                      title: row.title,
+                      task: row.task,
+                      steps_json: row.steps_json,
+                      due_date: row.due_date,
                     })) as T[],
                 }
               }

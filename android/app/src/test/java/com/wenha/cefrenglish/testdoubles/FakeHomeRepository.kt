@@ -13,7 +13,9 @@ class FakeHomeRepository(
         nextLessonId = "A2-02",
         todayCompleted = false,
         recentWeaknesses = listOf("grammar"),
+        reviewItems = emptyList(),
     ),
 ) : ProgressRepository {
     override suspend fun fetchSummary(userId: String): ProgressSummary = summary
+    override suspend fun completeReview(userId: String, reviewId: String) = Unit
 }

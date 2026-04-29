@@ -48,4 +48,31 @@ class LessonViewModelTest {
             Dispatchers.resetMain()
         }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun submitLesson_keepsAnswerFeedbackForCorrection() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeLessonRepository()
+            val viewModel = LessonViewModel(repository)
+
+            viewModel.loadTodayLesson("u1")
+            viewModel.updateReadingAnswer(0, "wrong")
+            viewModel.updateReadingAnswer(1, "answer")
+            viewModel.updateReadingAnswer(2, "answer")
+            viewModel.updateGrammarAnswer(0, "answer")
+            viewModel.updateGrammarAnswer(1, "wrong")
+            viewModel.updateGrammarAnswer(2, "answer")
+            viewModel.updateWriting("I study English today. I write two sentences.")
+            viewModel.submitLesson("u1")
+
+            val feedback = viewModel.uiState.value.submissionResult?.answerFeedback
+            assertEquals(false, viewModel.uiState.value.completed)
+            assertEquals("Reading question 1", feedback?.reading?.first()?.prompt)
+            assertEquals("Grammar question 2", feedback?.grammar?.first()?.prompt)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
 }

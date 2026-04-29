@@ -35,8 +35,8 @@ describe('worker e2e flow', () => {
           lessonInstanceId: lessonJson.lessonInstanceId,
           level: lessonJson.level,
           prompt: lessonJson.writingPrompt,
-          readingAnswers: ['a', 'b', 'c', 'd'],
-          grammarAnswers: ['a', 'b', 'c', 'd'],
+          readingAnswers: ['daily life', 'hello', 'c', 'd'],
+          grammarAnswers: ['am', 'I am a student.', 'c', 'd'],
           writingSubmission: 'Last year I visited my aunt. We cooked dinner together.',
         }),
       }),
@@ -50,7 +50,7 @@ describe('worker e2e flow', () => {
     expect(summary.status).toBe(200)
   })
 
-  it('turns failed lesson requirements into review items', async () => {
+  it('turns incorrect answers into specific review items', async () => {
     const app = createApp(createFakeEnv())
     await app.fetch(
       new Request('http://localhost/api/placement/assess', {
@@ -80,9 +80,9 @@ describe('worker e2e flow', () => {
           lessonInstanceId: lessonJson.lessonInstanceId,
           level: lessonJson.level,
           prompt: lessonJson.writingPrompt,
-          readingAnswers: ['a', 'b', 'c', 'd'],
-          grammarAnswers: ['a', '', 'c', 'd'],
-          writingSubmission: 'I studied English today.',
+          readingAnswers: ['wrong reading', 'hello', 'c', 'd'],
+          grammarAnswers: ['am', 'wrong grammar', 'c', 'd'],
+          writingSubmission: 'I studied English today. I wrote two sentences.',
         }),
       }),
     )
@@ -90,13 +90,90 @@ describe('worker e2e flow', () => {
     const summary = await app.fetch(new Request('http://localhost/api/me/summary?userId=u1'))
 
     expect(submitJson.completed).toBe(false)
-    expect(submitJson.missingRequirements).toEqual(['grammar_incomplete', 'writing_min_sentences'])
-    await expect(summary.json()).resolves.toMatchObject({
-      recentWeaknesses: ['grammar', 'writing'],
-      reviewItems: [
-        { reviewId: 'weakness:grammar' },
-        { reviewId: 'weakness:writing' },
-      ],
-    })
+    expect(submitJson.missingRequirements).toEqual(['reading_incorrect', 'grammar_incorrect'])
+    const summaryJson = await summary.json()
+    expect(summaryJson.recentWeaknesses).toEqual(['reading', 'grammar'])
+    expect(summaryJson.reviewItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reviewId: 'answer:u1:A2-01:v1:reading:A2-01-reading-1',
+          skill: 'reading',
+          title: '订正阅读错题',
+        }),
+        expect.objectContaining({
+          reviewId: 'answer:u1:A2-01:v1:grammar:A2-01-grammar-2',
+          skill: 'grammar',
+          title: '订正语法错题',
+        }),
+      ]),
+    )
+  })
+
+  it('turns structured writing feedback into due review items and reschedules them after completion', async () => {
+    const app = createApp(createFakeEnv())
+    await app.fetch(
+      new Request('http://localhost/api/placement/assess', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: 'u1',
+          answers: [
+            { skill: 'reading', correct: 4, total: 5 },
+            { skill: 'grammar', correct: 4, total: 5 },
+          ],
+          writingWordCount: 60,
+        }),
+      }),
+    )
+    const lesson = await app.fetch(new Request('http://localhost/api/today-lesson?userId=u1'))
+    const lessonJson = (await lesson.json()) as {
+      lessonInstanceId: string
+      level: 'A2'
+      writingPrompt: string
+    }
+
+    await app.fetch(
+      new Request('http://localhost/api/lesson/submit', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: 'u1',
+          lessonInstanceId: lessonJson.lessonInstanceId,
+          level: lessonJson.level,
+          prompt: lessonJson.writingPrompt,
+          readingAnswers: ['daily life', 'hello', 'c', 'd'],
+          grammarAnswers: ['am', 'I am a student.', 'c', 'd'],
+          writingSubmission: 'I wake up early. I walk to school.',
+        }),
+      }),
+    )
+
+    const firstSummary = await app.fetch(new Request('http://localhost/api/me/summary?userId=u1'))
+    const firstSummaryJson = await firstSummary.json()
+    expect(firstSummaryJson.reviewItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reviewId: 'writing:u1:A2-01:v1:0',
+          skill: 'writing',
+          title: '订正写作问题：connector',
+          dueDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        }),
+      ]),
+    )
+
+    await app.fetch(
+      new Request('http://localhost/api/review/complete', {
+        method: 'POST',
+        body: JSON.stringify({ userId: 'u1', reviewId: 'writing:u1:A2-01:v1:0' }),
+      }),
+    )
+
+    const secondSummary = await app.fetch(new Request('http://localhost/api/me/summary?userId=u1'))
+    const secondSummaryJson = await secondSummary.json()
+    expect(secondSummaryJson.reviewItems).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reviewId: 'writing:u1:A2-01:v1:0',
+        }),
+      ]),
+    )
   })
 })

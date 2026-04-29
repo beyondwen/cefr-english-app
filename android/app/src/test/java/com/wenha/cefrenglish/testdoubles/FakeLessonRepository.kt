@@ -2,6 +2,8 @@ package com.wenha.cefrenglish.testdoubles
 
 import com.wenha.cefrenglish.data.LessonRepository
 import com.wenha.cefrenglish.domain.DailyLesson
+import com.wenha.cefrenglish.domain.LessonAnswerFeedback
+import com.wenha.cefrenglish.domain.LessonAnswerFeedbackGroup
 import com.wenha.cefrenglish.domain.LessonQuestion
 import com.wenha.cefrenglish.domain.LessonSubmissionResult
 import com.wenha.cefrenglish.domain.WritingReview
@@ -18,15 +20,15 @@ class FakeLessonRepository : LessonRepository {
             theme = "daily life",
             readingText = "Sample reading",
             readingQuestions = listOf(
-                LessonQuestion("r1", "Reading question 1", emptyList(), ""),
-                LessonQuestion("r2", "Reading question 2", emptyList(), ""),
-                LessonQuestion("r3", "Reading question 3", emptyList(), ""),
+                LessonQuestion("r1", "Reading question 1", emptyList(), "answer"),
+                LessonQuestion("r2", "Reading question 2", emptyList(), "answer"),
+                LessonQuestion("r3", "Reading question 3", emptyList(), "answer"),
             ),
             grammarExplanation = "Sample grammar",
             grammarQuestions = listOf(
-                LessonQuestion("g1", "Grammar question 1", emptyList(), ""),
-                LessonQuestion("g2", "Grammar question 2", emptyList(), ""),
-                LessonQuestion("g3", "Grammar question 3", emptyList(), ""),
+                LessonQuestion("g1", "Grammar question 1", emptyList(), "answer"),
+                LessonQuestion("g2", "Grammar question 2", emptyList(), "answer"),
+                LessonQuestion("g3", "Grammar question 3", emptyList(), "answer"),
             ),
             writingPrompt = "Write about your weekly routine.",
             writingRubric = listOf("Use 2-4 sentences."),
@@ -55,24 +57,49 @@ class FakeLessonRepository : LessonRepository {
         readingAnswers: List<String>,
         grammarAnswers: List<String>,
         writingSubmission: String,
+        writingRevision: String,
     ): LessonSubmissionResult {
         val sentenceCount = writingSubmission
             .split(".", "!", "?")
             .map { it.trim() }
             .count { it.isNotBlank() }
-        val completed = readingAnswers.size >= 3 && grammarAnswers.size >= 3 && sentenceCount >= 2
+        val readingFeedback = listOfNotNull(
+            if (readingAnswers.firstOrNull() == "wrong") {
+                LessonAnswerFeedback("r1", "Reading question 1", "answer", "wrong", false)
+            } else {
+                null
+            },
+        )
+        val grammarFeedback = listOfNotNull(
+            if (grammarAnswers.getOrNull(1) == "wrong") {
+                LessonAnswerFeedback("g2", "Grammar question 2", "answer", "wrong", false)
+            } else {
+                null
+            },
+        )
+        val completed = readingAnswers.size >= 3 && grammarAnswers.size >= 3 && sentenceCount >= 2 &&
+            readingFeedback.isEmpty() &&
+            grammarFeedback.isEmpty()
         return LessonSubmissionResult(
             completed = completed,
             currentLessonId = "A1-01",
             nextLessonId = if (completed) "A1-02" else "A1-01",
             todayCompleted = completed,
-            missingRequirements = if (completed) emptyList() else listOf("writing_min_sentences"),
+            missingRequirements = if (completed) {
+                emptyList()
+            } else if (readingFeedback.isNotEmpty() || grammarFeedback.isNotEmpty()) {
+                listOf("reading_incorrect", "grammar_incorrect")
+            } else {
+                listOf("writing_min_sentences")
+            },
             ruleChecks = WritingRuleChecks(
                 notBlank = writingSubmission.isNotBlank(),
                 minSentencesOk = sentenceCount >= 2,
                 onTopicLikely = writingSubmission.length >= 15,
             ),
             feedback = WritingReview("g", "v", "c", emptyList(), "rewrite"),
+            revisionRequired = false,
+            answerFeedback = LessonAnswerFeedbackGroup(readingFeedback, grammarFeedback),
         )
     }
 }

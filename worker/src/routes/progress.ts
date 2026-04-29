@@ -4,6 +4,7 @@ import type { Env } from '../env'
 import { json } from '../lib/json'
 import { createLessonRepository } from '../repositories/lessonRepository'
 import { createProgressRepository } from '../repositories/progressRepository'
+import { createReviewItemRepository } from '../repositories/reviewItemRepository'
 import { createReviewProgressRepository } from '../repositories/reviewProgressRepository'
 import { createUserRepository } from '../repositories/userRepository'
 import { completeLesson } from '../services/progressService'
@@ -29,18 +30,26 @@ const reviewTaskByWeakness: Record<Weakness, { title: string; task: string; step
 const buildReviewItems = (
   weaknesses: Weakness[],
   progressByReviewId: Map<string, { status: 'pending' | 'completed'; masteryScore: number }>,
-): ReviewItem[] =>
-  weaknesses.map((weakness) => {
-    const reviewId = `weakness:${weakness}`
-    const progress = progressByReviewId.get(reviewId)
-    return {
-      reviewId,
+  specificItems: Array<Omit<ReviewItem, 'status' | 'masteryScore'>> = [],
+): ReviewItem[] => {
+  const specificSkills = new Set(specificItems.map((item) => item.skill))
+  const genericItems = weaknesses
+    .filter((weakness) => !specificSkills.has(weakness))
+    .map((weakness) => ({
+      reviewId: `weakness:${weakness}`,
       skill: weakness,
       ...reviewTaskByWeakness[weakness],
+    }))
+
+  return [...specificItems, ...genericItems].map((item) => {
+    const progress = progressByReviewId.get(item.reviewId)
+    return {
+      ...item,
       status: progress?.status ?? 'pending',
       masteryScore: progress?.masteryScore ?? 0,
     }
   })
+}
 
 export const handleSummary = async (request: Request, env: Env): Promise<Response> => {
   const userId = new URL(request.url).searchParams.get('userId') ?? ''
@@ -48,6 +57,7 @@ export const handleSummary = async (request: Request, env: Env): Promise<Respons
   const user = userId ? await createUserRepository(env.DB).get(userId) : null
   const progress = userId ? await createProgressRepository(env.DB).get(userId) : null
   const reviewProgress = userId ? await createReviewProgressRepository(env.DB).getByUser(userId) : new Map()
+  const specificReviewItems = userId ? await createReviewItemRepository(env.DB).getByUser(userId) : []
   const activeLesson = userId ? await createLessonRepository(env.DB).findActiveByUserId(userId) : null
   const currentLevel = user?.currentLevel ?? progress?.level ?? 'A1'
   const completedCount = progress?.completedLessonIds.length ?? 0
@@ -63,14 +73,16 @@ export const handleSummary = async (request: Request, env: Env): Promise<Respons
     nextLessonId: progress?.currentTemplateId ?? activeLesson?.templateId ?? null,
     todayCompleted: progress?.todayCompleted ?? false,
     recentWeaknesses: user?.recentWeaknesses ?? [],
-    reviewItems: buildReviewItems(user?.recentWeaknesses ?? [], reviewProgress),
+    reviewItems: buildReviewItems(user?.recentWeaknesses ?? [], reviewProgress, specificReviewItems),
   })
 }
 
 export const handleCompleteReview = async (request: Request, env: Env): Promise<Response> => {
   const payload = (await request.json()) as { userId: string; reviewId: string }
   if (!payload.userId || !payload.reviewId) return json({ error: 'Invalid review request' }, 400)
-  return json(await createReviewProgressRepository(env.DB).complete(payload.userId, payload.reviewId))
+  const result = await createReviewProgressRepository(env.DB).complete(payload.userId, payload.reviewId)
+  await createReviewItemRepository(env.DB).scheduleNext(payload.userId, payload.reviewId)
+  return json(result)
 }
 
 export const handleCompleteLesson = async (request: Request, env: Env): Promise<Response> => {

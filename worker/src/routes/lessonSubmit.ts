@@ -3,6 +3,7 @@ import { json } from '../lib/json'
 import { createAiProvider } from '../providers/aiProvider'
 import { createLessonRepository } from '../repositories/lessonRepository'
 import { createProgressRepository } from '../repositories/progressRepository'
+import { createReviewItemRepository } from '../repositories/reviewItemRepository'
 import { createUserRepository } from '../repositories/userRepository'
 import { createWritingReviewRepository } from '../repositories/writingReviewRepository'
 import { submitLesson } from '../services/progressService'
@@ -66,6 +67,20 @@ export const handleLessonSubmit = async (request: Request, env: Env): Promise<Re
     reviewResult,
   })
   await createUserRepository(env.DB).mergeWeaknesses(payload.userId, weaknessFromMissingRequirements(result.missingRequirements))
+  if (result.answerFeedback) {
+    await createReviewItemRepository(env.DB).insertFromAnswerFeedback({
+      userId: payload.userId,
+      lessonInstanceId: payload.lessonInstanceId,
+      answerFeedback: result.answerFeedback,
+    })
+  }
+  if (reviewResult.feedback.issues?.length) {
+    await createReviewItemRepository(env.DB).insertFromWritingIssues({
+      userId: payload.userId,
+      lessonInstanceId: payload.lessonInstanceId,
+      issues: reviewResult.feedback.issues,
+    })
+  }
 
   return json({
     ...result,

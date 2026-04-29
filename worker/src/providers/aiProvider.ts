@@ -1,4 +1,6 @@
-import type { CourseSyllabus, PlacementTest } from '../domain/types'
+import type { CourseSyllabus, LessonQuestion, PlacementTest } from '../domain/types'
+
+type GeneratedLessonQuestion = string | Partial<LessonQuestion>
 
 export type WritingReview = {
   grammar: string
@@ -6,6 +8,15 @@ export type WritingReview = {
   coherence: string
   suggestions: string[]
   rewrite: string
+  issues?: WritingIssue[]
+}
+
+export type WritingIssue = {
+  errorType: string
+  originalText: string
+  correction: string
+  explanation: string
+  practicePrompt: string
 }
 
 export type AiProvider = {
@@ -40,9 +51,9 @@ export type AiProvider = {
     listeningPractice?: string[]
     reviewTasks?: string[]
     readingText: string
-    readingQuestions: string[]
+    readingQuestions: GeneratedLessonQuestion[]
     grammarExplanation: string
-    grammarQuestions: string[]
+    grammarQuestions: GeneratedLessonQuestion[]
     writingPrompt: string
   }>
   generateSyllabus(input: { level: CourseSyllabus['level'] }): Promise<CourseSyllabus>
@@ -73,6 +84,11 @@ type LongCatConfig = {
 
 const defaultLongCatBaseUrl = 'https://api.longcat.chat/openai'
 const defaultLongCatModel = 'LongCat-Flash-Lite'
+type ResolvedLongCatConfig = {
+  apiKey: string
+  baseUrl: string
+  model: string
+}
 
 const syllabusShapeByLevel: Record<CourseSyllabus['level'], { unitCount: number; lessonsPerUnit: string; focus: string }> = {
   A1: {
@@ -125,6 +141,20 @@ const parseJsonObject = <T>(content: string): T => {
 const asStringArray = (value: unknown): string[] =>
   Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : []
 
+const asGeneratedQuestions = (value: unknown): GeneratedLessonQuestion[] =>
+  Array.isArray(value)
+    ? value.map((item) => {
+        if (!item || typeof item !== 'object') return String(item)
+        const parsed = item as { questionId?: unknown; prompt?: unknown; choices?: unknown; answer?: unknown }
+        return {
+          questionId: parsed.questionId == null ? undefined : String(parsed.questionId),
+          prompt: String(parsed.prompt ?? ''),
+          choices: asStringArray(parsed.choices),
+          answer: parsed.answer == null ? '' : String(parsed.answer),
+        }
+      }).filter((item) => typeof item === 'string' || item.prompt)
+    : []
+
 const asVocabulary = (value: unknown): Array<{ word: string; meaning: string; example: string }> =>
   Array.isArray(value)
     ? value.map((item) => {
@@ -172,9 +202,9 @@ const normalizeLesson = (value: unknown): Awaited<ReturnType<AiProvider['generat
     listeningPractice: asStringArray(item.listeningPractice).slice(0, 5),
     reviewTasks: asStringArray(item.reviewTasks).slice(0, 5),
     readingText: String(item.readingText ?? ''),
-    readingQuestions: asStringArray(item.readingQuestions).slice(0, 4),
+    readingQuestions: asGeneratedQuestions(item.readingQuestions).slice(0, 4),
     grammarExplanation: String(item.grammarExplanation ?? ''),
-    grammarQuestions: asStringArray(item.grammarQuestions).slice(0, 4),
+    grammarQuestions: asGeneratedQuestions(item.grammarQuestions).slice(0, 4),
     writingPrompt: String(item.writingPrompt ?? ''),
   }
 }
@@ -187,6 +217,18 @@ const normalizeReview = (value: unknown): WritingReview => {
     coherence: String(item.coherence ?? ''),
     suggestions: asStringArray(item.suggestions).slice(0, 5),
     rewrite: String(item.rewrite ?? ''),
+    issues: Array.isArray(item.issues)
+      ? item.issues.map((issue) => {
+          const parsed = issue as Partial<WritingIssue>
+          return {
+            errorType: String(parsed.errorType ?? ''),
+            originalText: String(parsed.originalText ?? ''),
+            correction: String(parsed.correction ?? ''),
+            explanation: String(parsed.explanation ?? ''),
+            practicePrompt: String(parsed.practicePrompt ?? ''),
+          }
+        }).filter((issue) => issue.errorType && issue.practicePrompt).slice(0, 3)
+      : [],
   }
 }
 
@@ -259,7 +301,7 @@ const normalizePlacementTest = (value: unknown): PlacementTest => {
 }
 
 const chatCompletion = async (
-  config: Required<LongCatConfig>,
+  config: ResolvedLongCatConfig,
   messages: Array<{ role: 'system' | 'user'; content: string }>,
   options: { temperature?: number; maxTokens?: number; jsonObject?: boolean } = {},
 ): Promise<string> => {
@@ -319,9 +361,15 @@ export const fakeAiProvider: AiProvider = {
       speakingPractice: ['跟读核心句型 3 遍。', '替换关键词说出 3 个自己的句子。'],
       listeningPractice: ['听老师读对话，圈出你听到的关键词。', '遮住文字后再听一遍，写下 2 个短句。'],
       readingText: `Sample reading for ${lessonId} about ${theme ?? 'daily life'}.`,
-      readingQuestions: ['What is the main idea?', 'Which detail is correct?'],
+      readingQuestions: [
+        { prompt: 'What is the main idea?', answer: 'daily life' },
+        { prompt: 'Which detail is correct?', answer: 'hello' },
+      ],
       grammarExplanation: `Focus on ${grammarFocus}. ${weaknessText}`,
-      grammarQuestions: ['Choose the correct form.', 'Rewrite the sentence correctly.'],
+      grammarQuestions: [
+        { prompt: 'Choose the correct form.', answer: targetSentences?.[0]?.split(' ')[1] ?? 'am' },
+        { prompt: 'Rewrite the sentence correctly.', answer: targetSentences?.[0] ?? 'I am a student.' },
+      ],
       writingPrompt: `Write a ${writingTask} response about ${theme ?? 'daily life'}.`,
       reviewTasks: (reviewFocus?.length ? reviewFocus : ['核心句型']).map((item) => `复习 ${item}，并自己造 1 个句子。`),
     }
@@ -333,6 +381,15 @@ export const fakeAiProvider: AiProvider = {
       coherence: 'The text is easy to follow.',
       suggestions: ['Link the two sentences with and.'],
       rewrite: 'I wake up early and I walk to school.',
+      issues: [
+        {
+          errorType: 'connector',
+          originalText: 'I wake up early. I walk to school.',
+          correction: 'I wake up early, and I walk to school.',
+          explanation: '两个相关动作可以用 and 连接，让表达更自然。',
+          practicePrompt: '用 and 连接 2 个与你日常生活有关的短句。',
+        },
+      ],
     }
   },
   async generateSyllabus({ level }) {
@@ -427,11 +484,11 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
         {
           role: 'system',
           content:
-            '你是一个专业英语课程设计老师。请为中文母语学习者生成一节真正可学习的英语课。只返回严格 JSON，不要 Markdown，不要代码块。字段必须是 objectives, warmupQuestions, vocabulary, keySentences, dialogue, speakingPractice, listeningPractice, readingText, readingQuestions, grammarExplanation, grammarQuestions, writingPrompt, reviewTasks。readingText、dialogue、例句用英文；解释、问题和任务用中文。A1-A2 必须使用简单短句和高频词。',
+            '你是一个专业英语课程设计老师。请为中文母语学习者生成一节真正可学习的英语课。只返回严格 JSON，不要 Markdown，不要代码块。字段必须是 objectives, warmupQuestions, vocabulary, keySentences, dialogue, speakingPractice, listeningPractice, readingText, readingQuestions, grammarExplanation, grammarQuestions, writingPrompt, reviewTasks。readingQuestions 和 grammarQuestions 每项必须是对象，字段为 prompt, choices, answer；没有选项时 choices 为空数组。readingText、dialogue、例句用英文；解释、问题和任务用中文。A1-A2 必须使用简单短句和高频词。',
         },
         {
           role: 'user',
-          content: `${prompt}\n\nJSON要求：objectives 2-4条，第一条必须改写“本课可完成任务”，让学习者知道学完能做什么；warmupQuestions 2条；vocabulary 6-10个词，每个含 word/meaning/example；keySentences 3-5个句型，每个含 pattern/meaning/examples，必须优先使用“必须覆盖的目标句型”；dialogue 6-10轮短对话；speakingPractice 3-5条跟读或替换练习，每条必须具体说明读哪一句或替换什么词；listeningPractice 2-4条听辨/听写任务，要能由手机朗读 dialogue 或 keySentences 完成；readingText 为80-180词英文短文；readingQuestions 为2-4个中文阅读问题；grammarExplanation 为120-220字中文语法讲解，要讲清楚怎么用；grammarQuestions 为3-5个中文语法练习；writingPrompt 为一个贴合章节的中文写作题；reviewTasks 3-5条课后复习任务，必须覆盖“课后复习重点”。`,
+          content: `${prompt}\n\nJSON要求：objectives 2-4条，第一条必须改写“本课可完成任务”，让学习者知道学完能做什么；warmupQuestions 2条；vocabulary 6-10个词，每个含 word/meaning/example；keySentences 3-5个句型，每个含 pattern/meaning/examples，必须优先使用“必须覆盖的目标句型”；dialogue 6-10轮短对话；speakingPractice 3-5条跟读或替换练习，每条必须具体说明读哪一句或替换什么词；listeningPractice 2-4条听辨/听写任务，要能由手机朗读 dialogue 或 keySentences 完成；readingText 为80-180词英文短文；readingQuestions 为2-4个对象，每个含 prompt/choices/answer，answer 必须是可判分的简短答案；grammarExplanation 为120-220字中文语法讲解，要讲清楚怎么用；grammarQuestions 为3-5个对象，每个含 prompt/choices/answer，answer 必须是标准答案；writingPrompt 为一个贴合章节的中文写作题；reviewTasks 3-5条课后复习任务，必须覆盖“课后复习重点”。`,
         },
       ])
 
@@ -466,7 +523,7 @@ export const createLongCatProvider = (config: LongCatConfig): AiProvider | null 
         {
           role: 'system',
           content:
-            '你是英语写作批改老师。只返回严格 JSON，不要 Markdown，不要代码块。字段必须是 grammar, vocabulary, coherence, suggestions, rewrite。反馈使用中文，rewrite 使用英文。',
+            '你是英语写作批改老师。只返回严格 JSON，不要 Markdown，不要代码块。字段必须是 grammar, vocabulary, coherence, suggestions, rewrite, issues。issues 是数组，最多 3 项，每项字段为 errorType, originalText, correction, explanation, practicePrompt。反馈使用中文，rewrite 和 correction 可使用英文。',
         },
         {
           role: 'user',

@@ -2,14 +2,14 @@ import { lessonTemplatesByLevel } from '../domain/lessonTemplates'
 import type { LessonInstance, LessonQuestion, LessonTemplate, UserProfile } from '../domain/types'
 import type { AiProvider } from '../providers/aiProvider'
 
-const createLessonQuestions = (prompts: string[], prefix: string): LessonQuestion[] =>
+const createLessonQuestions = (prompts: Array<string | Partial<LessonQuestion>>, prefix: string): LessonQuestion[] =>
   prompts.map((prompt, index) => {
-    const text = typeof prompt === 'string' ? prompt : JSON.stringify(prompt)
+    const text = typeof prompt === 'string' ? prompt : prompt.prompt ?? JSON.stringify(prompt)
     return {
-      questionId: `${prefix}-${index + 1}`,
+      questionId: typeof prompt === 'string' ? `${prefix}-${index + 1}` : prompt.questionId ?? `${prefix}-${index + 1}`,
       prompt: text,
-      choices: [],
-      answer: '',
+      choices: typeof prompt === 'string' ? [] : prompt.choices ?? [],
+      answer: typeof prompt === 'string' ? '' : prompt.answer ?? '',
     }
   })
 

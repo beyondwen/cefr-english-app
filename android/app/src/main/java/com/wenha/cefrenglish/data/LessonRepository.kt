@@ -6,10 +6,13 @@ import com.wenha.cefrenglish.data.api.TodayLessonRegenerateRequestDto
 import com.wenha.cefrenglish.domain.DailyLesson
 import com.wenha.cefrenglish.domain.DialogueLine
 import com.wenha.cefrenglish.domain.KeySentence
+import com.wenha.cefrenglish.domain.LessonAnswerFeedback
+import com.wenha.cefrenglish.domain.LessonAnswerFeedbackGroup
 import com.wenha.cefrenglish.domain.LessonQuestion
 import com.wenha.cefrenglish.domain.LessonSubmissionResult
 import com.wenha.cefrenglish.domain.VocabularyItem
 import com.wenha.cefrenglish.domain.WritingReview
+import com.wenha.cefrenglish.domain.WritingIssue
 import com.wenha.cefrenglish.domain.WritingRuleChecks
 
 interface LessonRepository {
@@ -84,7 +87,38 @@ class NetworkLessonRepository(private val api: AppApi) : LessonRepository {
                 coherence = response.feedback.coherence,
                 suggestions = response.feedback.suggestions,
                 rewrite = response.feedback.rewrite,
+                issues = response.feedback.issues.map {
+                    WritingIssue(
+                        errorType = it.errorType,
+                        originalText = it.originalText,
+                        correction = it.correction,
+                        explanation = it.explanation,
+                        practicePrompt = it.practicePrompt,
+                    )
+                },
             ),
+            answerFeedback = response.answerFeedback?.let { group ->
+                LessonAnswerFeedbackGroup(
+                    reading = group.reading.map {
+                        LessonAnswerFeedback(
+                            questionId = it.questionId,
+                            prompt = it.prompt,
+                            expectedAnswer = it.expectedAnswer,
+                            submittedAnswer = it.submittedAnswer,
+                            correct = it.correct,
+                        )
+                    },
+                    grammar = group.grammar.map {
+                        LessonAnswerFeedback(
+                            questionId = it.questionId,
+                            prompt = it.prompt,
+                            expectedAnswer = it.expectedAnswer,
+                            submittedAnswer = it.submittedAnswer,
+                            correct = it.correct,
+                        )
+                    },
+                )
+            },
         )
     }
 }

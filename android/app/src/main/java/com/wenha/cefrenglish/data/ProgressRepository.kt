@@ -29,6 +29,7 @@ class NetworkProgressRepository(private val api: AppApi) : ProgressRepository {
                     title = it.title,
                     task = it.task,
                     steps = it.steps,
+                    dueDate = it.dueDate,
                     status = it.status,
                     masteryScore = it.masteryScore,
                 )
